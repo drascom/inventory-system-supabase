@@ -21,50 +21,202 @@ Execute the following SQL in your Supabase SQL editor (`db/schema.sql`):
 For the `inventory-avatar` bucket, add these policies:
 
 ```sql
--- Allow users to view their own avatar
-CREATE POLICY "Users can view own avatar" ON storage.objects FOR SELECT
-USING (bucket_id = 'inventory-avatar' AND auth.uid()::text = (storage.fspath(name))[1]);
+CREATE POLICY "Allow authenticated users to select from inventory-avatar bucket" 
+ON storage.objects 
+FOR SELECT 
+TO authenticated 
+USING (bucket_id = 'inventory-avatar');
 
--- Allow users to upload their own avatar
-CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'inventory-avatar' AND
-  auth.uid()::text = (storage.fspath(name))[1]
-);
+CREATE POLICY "Allow authenticated users to insert into inventory-avatar bucket" 
+ON storage.objects 
+FOR INSERT 
+TO authenticated 
+WITH CHECK (bucket_id = 'inventory-avatar');
 
--- Allow users to update their own avatar
-CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE
-USING (bucket_id = 'inventory-avatar' AND auth.uid()::text = (storage.fspath(name))[1]);
+CREATE POLICY "Allow authenticated users to update inventory-avatar bucket" 
+ON storage.objects 
+FOR UPDATE 
+TO authenticated 
+USING (bucket_id = 'inventory-avatar') 
+WITH CHECK (bucket_id = 'inventory-avatar');
 
--- Allow users to delete their own avatar
-CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE
-USING (bucket_id = 'inventory-avatar' AND auth.uid()::text = (storage.fspath(name))[1]);
+CREATE POLICY "Allow authenticated users to delete from inventory-avatar bucket" 
+ON storage.objects 
+FOR DELETE 
+TO authenticated 
+USING (bucket_id = 'inventory-avatar');
 ```
 
 ### 4. Database Policies
 
 ```sql
--- Enable RLS on all tables
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stock_movements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to select" ON public.categories
+FOR SELECT
+TO authenticated
+USING (true);
 
--- Policies for products
-CREATE POLICY "Allow read access to all authenticated users" ON products
-FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow authenticated users to insert" ON public.categories
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
 
-CREATE POLICY "Allow insert for authenticated users" ON products
-FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow authenticated users to update" ON public.categories
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
 
-CREATE POLICY "Allow update for authenticated users" ON products
-FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow authenticated users to delete" ON public.categories
+FOR DELETE
+TO authenticated
+USING (true);
 
--- Similar policies for other tables...
+CREATE POLICY "Allow authenticated users to select" ON public.customers
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert" ON public.customers
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to update" ON public.customers
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to delete" ON public.customers
+FOR DELETE
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to select" ON public.products
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert" ON public.products
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to update" ON public.products
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to delete" ON public.products
+FOR DELETE
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to select" ON public.purchase_returns
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert" ON public.purchase_returns
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to update" ON public.purchase_returns
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to delete" ON public.purchase_returns
+FOR DELETE
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to select" ON public.purchases
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert" ON public.purchases
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to update" ON public.purchases
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to delete" ON public.purchases
+FOR DELETE
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to select" ON public.sales
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert" ON public.sales
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to update" ON public.sales
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to delete" ON public.sales
+FOR DELETE
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to select" ON public.stock_movements
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert" ON public.stock_movements
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to update" ON public.stock_movements
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to delete" ON public.stock_movements
+FOR DELETE
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to select" ON public.suppliers
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert" ON public.suppliers
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to update" ON public.suppliers
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users to delete" ON public.suppliers
+FOR DELETE
+TO authenticated
+USING (true);
 ```
 
 ## About
