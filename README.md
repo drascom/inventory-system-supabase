@@ -12,34 +12,33 @@ Execute the following SQL in your Supabase SQL editor (`db/schema.sql`):
 ```
 
 ### 2. Storage Setup
-1. Create a new bucket named `avatars` with the following settings:
+1. Create a new bucket named `inventory-avatar` with the following settings:
    - Public bucket: No
    - File size limit: 5MB
    - Allowed mime types: image/*
 
 ### 3. Storage Policies
-For the `avatars` bucket, add these policies:
+For the `inventory-avatar` bucket, add these policies:
 
 ```sql
 -- Allow users to view their own avatar
 CREATE POLICY "Users can view own avatar" ON storage.objects FOR SELECT
-USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.fspath(name))[1]);
+USING (bucket_id = 'inventory-avatar' AND auth.uid()::text = (storage.fspath(name))[1]);
 
 -- Allow users to upload their own avatar
 CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT
 WITH CHECK (
-  bucket_id = 'avatars' AND
-  auth.uid()::text = (storage.fspath(name))[1] AND
-  (storage.fspath(name))[2] = 'avatar.jpg'
+  bucket_id = 'inventory-avatar' AND
+  auth.uid()::text = (storage.fspath(name))[1]
 );
 
 -- Allow users to update their own avatar
 CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE
-USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.fspath(name))[1]);
+USING (bucket_id = 'inventory-avatar' AND auth.uid()::text = (storage.fspath(name))[1]);
 
 -- Allow users to delete their own avatar
 CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE
-USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.fspath(name))[1]);
+USING (bucket_id = 'inventory-avatar' AND auth.uid()::text = (storage.fspath(name))[1]);
 ```
 
 ### 4. Database Policies
