@@ -2,6 +2,15 @@
 
 A modern web-based inventory management system built with Supabase as the backend. This project demonstrates how to create a full-featured inventory system using Supabase's powerful features including authentication, real-time database, and storage capabilities.
 
+## Screenshots
+
+![Login Page](screenshots/login.png)
+![Dashboard](screenshots/dashboard.png)
+![Products List](screenshots/products.png)
+![Purchases](screenshots/purchase.png)
+![Returns List](screenshots/returns.png)
+![Profile ](screenshots/profile.png)
+
 ## Database Setup
 
 ### 1. SQL Tables
