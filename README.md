@@ -2,6 +2,72 @@
 
 A modern web-based inventory management system built with Supabase as the backend. This project demonstrates how to create a full-featured inventory system using Supabase's powerful features including authentication, real-time database, and storage capabilities.
 
+## Database Setup
+
+### 1. SQL Tables
+Execute the following SQL in your Supabase SQL editor (`db/schema.sql`):
+```sql
+-- Create tables for inventory management system
+-- Copy the entire content from db/schema.sql
+```
+
+### 2. Storage Setup
+1. Create a new bucket named `avatars` with the following settings:
+   - Public bucket: No
+   - File size limit: 5MB
+   - Allowed mime types: image/*
+
+### 3. Storage Policies
+For the `avatars` bucket, add these policies:
+
+```sql
+-- Allow users to view their own avatar
+CREATE POLICY "Users can view own avatar" ON storage.objects FOR SELECT
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.fspath(name))[1]);
+
+-- Allow users to upload their own avatar
+CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT
+WITH CHECK (
+  bucket_id = 'avatars' AND
+  auth.uid()::text = (storage.fspath(name))[1] AND
+  (storage.fspath(name))[2] = 'avatar.jpg'
+);
+
+-- Allow users to update their own avatar
+CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.fspath(name))[1]);
+
+-- Allow users to delete their own avatar
+CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.fspath(name))[1]);
+```
+
+### 4. Database Policies
+
+```sql
+-- Enable RLS on all tables
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Policies for products
+CREATE POLICY "Allow read access to all authenticated users" ON products
+FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow insert for authenticated users" ON products
+FOR INSERT TO authenticated WITH CHECK (true);
+
+CREATE POLICY "Allow update for authenticated users" ON products
+FOR UPDATE TO authenticated USING (true);
+
+-- Similar policies for other tables...
+```
+
 ## About
 
 This system provides a complete solution for managing inventory, featuring:
