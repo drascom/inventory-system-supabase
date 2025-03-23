@@ -1,0 +1,27 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Categories</h2>
+        <a href="#add-category" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Category
+        </a>
+    </div>
+    <table id="categoriesTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<script type="module">
+    import categoryManager from '../assets/js/categories.js';
+    console.log('Categories list page loaded');
+    await categoryManager.initializeList();
+</script>

@@ -1,0 +1,30 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Purchase Returns</h2>
+        <a href="#add-return-purchase" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Return
+        </a>
+    </div>
+
+    <table id="returnsTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Purchase Reference</th>
+                <th>Product</th>
+                <th>Supplier</th>
+                <th>Quantity</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script type="module">
+    import purchaseManager from '../assets/js/purchases.js';
+    console.log('Purchase returns list page loaded');
+    await purchaseManager.initializeReturnsTable();
+</script>

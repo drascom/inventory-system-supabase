@@ -1,0 +1,196 @@
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-4">Dashboard Overview</h2>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4 g-3">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body bg-primary">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title">Total Sales</h5>
+                        <div>
+                            <a href="#" onclick="loadContent('sales-list')" class="text-white me-2" title="View Sales">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="#" onclick="loadContent('add-sale')" class="text-white" title="Add Sale">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <h2 class="card-text" id="totalSales">$0.00</h2>
+                    <p class="card-text"><small>Last 30 days</small></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body bg-info">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title">Total Purchases</h5>
+                        <div>
+                            <a href="#" onclick="loadContent('purchases-list')" class="text-white me-2"
+                                title="View Purchases">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="#" onclick="loadContent('add-purchase')" class="text-white" title="Add Purchase">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <h2 class="card-text" id="totalPurchases">$0.00</h2>
+                    <p class="card-text"><small>Last 30 days</small></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body bg-success">
+                    <h5 class="card-title">Total Products</h5>
+                    <h2 class="card-text" id="totalProducts">0</h2>
+                    <p class="card-text"><small>In inventory</small></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body bg-warning">
+                    <h5 class="card-title">Low Stock Items</h5>
+                    <h2 class="card-text" id="lowStockItems">0</h2>
+                    <p class="card-text"><small>Need attention</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Section -->
+    <div class="row g-3">
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Sales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentSalesList">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Low Stock Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Current Stock</th>
+                                    <th>Min. Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowStockList">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from '../assets/js/supabase.js';
+
+    async function loadDashboardData() {
+        try {
+            // Fetch last 30 days sales total
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const { data: salesData, error: salesError } = await supabase
+                .from('sales')
+                .select('total_amount')
+                .gte('sale_date', thirtyDaysAgo.toISOString().split('T')[0]);
+
+            if (salesError) throw salesError;
+            const totalSales = salesData.reduce((sum, sale) => sum + sale.total_amount, 0);
+            document.getElementById('totalSales').textContent = `$${totalSales.toFixed(2)}`;
+
+            // Fetch total products
+            const { count: productsCount, error: productsError } = await supabase
+                .from('products')
+                .select('*', { count: 'exact' });
+
+            if (productsError) throw productsError;
+            document.getElementById('totalProducts').textContent = productsCount;
+
+            // Fetch low stock items
+            const { data: lowStock, error: lowStockError } = await supabase
+                .from('products')
+                .select('*')
+                .lt('stock_quantity', 10);
+
+            if (lowStockError) throw lowStockError;
+            document.getElementById('lowStockItems').textContent = lowStock.length;
+
+            // Fetch recent sales
+            const { data: recentSales, error: recentSalesError } = await supabase
+                .from('sales')
+                .select(`
+                    sale_date,
+                    created_at,
+                    total_amount,
+                    customers (name)
+                `)
+                .order('sale_date', { ascending: false })
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            if (recentSalesError) throw recentSalesError;
+
+            const recentSalesList = document.getElementById('recentSalesList');
+            recentSalesList.innerHTML = recentSales.map(sale => `
+                <tr>
+                    <td>${new Date(sale.sale_date).toLocaleDateString()}</td>
+                    <td>${sale.customers?.name || 'N/A'}</td>
+                    <td>$${sale.total_amount.toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            // Populate low stock table
+            const lowStockList = document.getElementById('lowStockList');
+            lowStockList.innerHTML = lowStock.map(product => `
+                <tr>
+                    <td>${product.name}</td>
+                    <td>${product.stock_quantity}</td>
+                    <td>${product.min_stock_quantity || 10}</td>
+                </tr>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            alert('Failed to load dashboard data');
+        }
+    }
+
+    // Load dashboard data when the page loads
+    loadDashboardData();
+</script>

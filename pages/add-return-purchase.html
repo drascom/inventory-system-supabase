@@ -1,0 +1,62 @@
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 id="formTitle">Return Purchase</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#purchases-list">Purchases</a></li>
+                <li class="breadcrumb-item"><a href="#return-purchase-list">Returns</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbAction">Add</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="returnPurchaseForm" class="row g-3">
+                <input type="hidden" id="returnId">
+
+                <div class="col-12">
+                    <label for="purchaseSelect" class="form-label">Select Purchase</label>
+                    <select class="form-select" id="purchaseSelect" required>
+                        <option value="">Search purchase by reference or product...</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="returnQuantity" class="form-label">Return Quantity</label>
+                    <input type="number" class="form-control" id="returnQuantity" required min="1">
+                    <small class="text-muted">Original quantity: <span id="originalQuantity">-</span></small>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="returnStatus" class="form-label">Status</label>
+                    <select class="form-select" id="returnStatus" required>
+                        <option value="WAITING">Waiting</option>
+                        <option value="SENT">Sent</option>
+                        <option value="CONFIRMED">Confirmed</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label for="returnReason" class="form-label">Return Reason</label>
+                    <textarea class="form-control" id="returnReason" rows="3" required></textarea>
+                </div>
+
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Return
+                    </button>
+                    <a href="#return-purchase-list" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import purchaseManager from '../assets/js/purchases.js';
+    console.log('Return purchase page loaded');
+    await purchaseManager.initializeReturnForm();
+</script>

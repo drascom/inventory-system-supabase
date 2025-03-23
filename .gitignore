@@ -1,0 +1,10 @@
+# Config with sensitive data
+assets/js/config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/

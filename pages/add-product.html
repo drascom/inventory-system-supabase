@@ -1,0 +1,89 @@
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 id="formTitle">Add Product</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="#products-list">Products</a></li>
+                <li class="breadcrumb-item active" aria-current="page" id="breadcrumbAction">Add</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="productForm" class="row g-3">
+                <input type="hidden" id="productId">
+
+                <!-- Name field - full width -->
+                <div class="col-12">
+                    <label for="productName" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="productName" required>
+                </div>
+
+                <!-- Type field - responsive width -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="productType" class="form-label">Product Type</label>
+                    <select class="form-control" id="productType" required>
+                        <option value="">Select Type</option>
+                        <option value="SELLABLE">Sellable Product</option>
+                        <option value="CONSUMABLE">Consumable</option>
+                        <option value="FIXTURE">Fixture</option>
+                    </select>
+                </div>
+
+                <!-- Category field - responsive width -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="productCategory" class="form-label">Category</label>
+                    <select class="form-control" id="productCategory">
+                        <option value="">Select Category</option>
+                    </select>
+                </div>
+
+                <!-- Price field - responsive width -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="productPrice" class="form-label">Unit Price</label>
+                    <div class="input-group">
+                        <span class="input-group-text">£</span>
+                        <input type="number" step="0.01" class="form-control" id="productPrice" required>
+                    </div>
+                </div>
+
+                <!-- Stock field - responsive width -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="productStock" class="form-label">Edit Stock Count</label>
+                    <input type="number" class="form-control" id="productStock" value="0" readonly>
+                </div>
+
+                <!-- Min Stock field - responsive width -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="productMinStock" class="form-label">Minimum Stock</label>
+                    <input type="number" class="form-control" id="productMinStock" value="0" required>
+                    <div class="form-text">Alert threshold for low stock</div>
+                </div>
+
+                <!-- Description field - always full width -->
+                <div class="col-12">
+                    <label for="productDescription" class="form-label">Description</label>
+                    <textarea class="form-control" id="productDescription" rows="2"></textarea>
+                </div>
+
+                <!-- Buttons - full width container -->
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Product
+                    </button>
+                    <a href="#products-list" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import productManager from '../assets/js/products.js';
+    console.log('Product form page loaded');
+    await productManager.initializeForm();
+</script>

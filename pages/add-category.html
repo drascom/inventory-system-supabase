@@ -1,0 +1,40 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 id="formTitle">Add Category</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#categories-list">Categories</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbAction">Add</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="categoryForm" class="row g-3">
+                <input type="hidden" id="categoryId">
+
+                <div class="col-md-12">
+                    <label for="categoryName" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="categoryName" required>
+                </div>
+
+                <div class="col-12">
+                    <label for="categoryDescription" class="form-label">Description</label>
+                    <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
+                </div>
+
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Save Category</button>
+                    <a href="#categories-list" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import categoryManager from '../assets/js/categories.js';
+    console.log('Category form page loaded');
+    await categoryManager.initializeForm();
+</script>
