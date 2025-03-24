@@ -2,6 +2,17 @@
 
 A modern web-based inventory management system built with Supabase as the backend. This project demonstrates how to create a full-featured inventory system using Supabase's powerful features including authentication, real-time database, and storage capabilities.
 
+## Developed With
+
+### ![VS Code](assets/images/vscode.svg) Visual Studio Code
+Industry-standard code editor providing a robust development environment with extensive plugin support and integrated Git functionality.
+
+### ![Augment](assets/images/augment.svg) Augment
+AI-powered code assistant that enhances developer productivity through intelligent code suggestions, documentation, and real-time assistance. Augment helps streamline development workflows and improve code quality.
+
+### ![GitHub](assets/images/github.svg) GitHub
+Version control platform used for source code management, collaboration, and project hosting.
+
 ## Screenshots
 
 ![Login Page](screenshots/login.png)
