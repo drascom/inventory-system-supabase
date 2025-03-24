@@ -239,6 +239,33 @@ TO authenticated
 USING (true);
 ```
 
+## Authentication Setup
+
+### 1. Create Test User in Supabase
+1. Navigate to your Supabase project dashboard
+2. Go to Authentication > Users
+3. Click "Add User"
+4. Fill in the following details:
+   - Email: `test@example.com`
+   - Password: `test123456`
+   - (Optional) Check "Auto-confirm user" to skip email verification
+
+### 2. Login Credentials
+Use these credentials to test the system:
+```bash
+Email: test@example.com
+Password: test123456
+```
+
+Note: For production use, create secure credentials and enable proper email verification.
+
+### 3. Authentication Features
+- Email/Password login
+- Magic link authentication (passwordless)
+- User session management
+- Protected routes
+- Profile management
+
 ## About
 
 This system provides a complete solution for managing inventory, featuring:
