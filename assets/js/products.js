@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { showToast } from './utils.js';
 
 /**
  * Product Management System Updates - Version 1.2.0
@@ -156,22 +157,54 @@ class ProductManager {
                 data: products,
                 responsive: {
                     details: {
-                        display: $.fn.dataTable.Responsive.display.modal({
-                            header: function (row) {
-                                return 'Details for ' + row.data().name;
-                            }
-                        }),
-                        renderer: $.fn.dataTable.Responsive.renderer.tableAll({
-                            tableClass: 'table'
-                        })
+                        type: 'column',
+                        target: 'tr',
+                        renderer: function (api, rowIdx, columns) {
+                            const data = columns.reduce((acc, col) => {
+                                if (col.hidden) {
+                                    acc += `
+                                        <tr>
+                                            <td class="fw-bold">${col.title}:</td>
+                                            <td>${col.data}</td>
+                                        </tr>`;
+                                }
+                                return acc;
+                            }, '');
+
+                            return data ?
+                                `<table class="table table-sm table-borderless m-0">${data}</table>` :
+                                false;
+                        }
                     }
                 },
                 columns: [
-                    { data: 'id', visible: false },
-                    { data: 'name' },
-                    { data: 'categories.name' },
+                    {
+                        data: 'id',
+                        visible: false
+                    },
+                    {
+                        data: 'categories.name',
+                        className: 'min-sm',
+                        width: '15%'
+                    },
+                    {
+                        data: 'name',
+                        className: 'all',
+                        width: '25%',
+                        render: function (data, type, row) {
+                            if (type === 'display') {
+                                const category = row.categories?.name ?
+                                    `<small class="text-muted d-block d-sm-none">${row.categories.name}</small>` : '';
+                                return `${data}${category}`;
+                            }
+                            return data;
+                        }
+                    },
+
                     {
                         data: 'type',
+                        className: 'min-md',
+                        width: '12%',
                         render: (data) => {
                             const config = typeConfig[data];
                             return `
@@ -184,81 +217,61 @@ class ProductManager {
                     },
                     {
                         data: 'description',
-                        responsivePriority: 3
+                        className: 'min-lg',
+                        width: '20%',
+                        render: function (data, type, row) {
+                            if (type === 'display' && data) {
+                                return data.length > 50 ?
+                                    `<span title="${data}">${data.substring(0, 50)}...</span>` :
+                                    data;
+                            }
+                            return data || 'No description';
+                        }
                     },
                     {
                         data: 'unit_price',
-                        render: (data) => `$${parseFloat(data).toFixed(2)}`,
-                        responsivePriority: 2
+                        className: 'all text-end',
+                        width: '10%',
+                        render: (data) => `$${parseFloat(data).toFixed(2)}`
                     },
                     {
-                        data: null,
-                        render: function (data) {
-                            const stockClass = data.stock_quantity <= data.min_stock ? 'text-danger' : 'text-success';
-                            return `<span class="${stockClass}">${data.stock_quantity}</span> (min: ${data.min_stock})`;
-                        },
-                        responsivePriority: 1
-                    },
-                    {
-                        data: 'created_at',
-                        render: (data) => new Date(data).toLocaleDateString(),
-                        responsivePriority: 4
+                        data: 'stock_quantity',
+                        className: 'min-md text-center',
+                        width: '8%',
+                        render: function (data, type, row) {
+                            const stockClass = data <= row.min_stock ? 'text-danger' : 'text-success';
+                            return `<span class="${stockClass}">${data}</span>`;
+                        }
                     },
                     {
                         data: null,
                         orderable: false,
-                        className: 'text-center',
-                        responsivePriority: 1,
+                        className: 'all text-end',
+                        width: '10%',
                         render: (data, type, row) => `
-                            <div class="btn-group" role="group">
-                                <a href="#add-product/${row.id}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${row.id}" title="Delete">
-                                    <i class="bi bi-trash"></i>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary edit-btn" data-id="${row.id}">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary stock-history-btn" data-id="${row.id}" title="Stock History">
-                                    <i class="bi bi-clock-history"></i>
+                                <button type="button" class="btn btn-outline-danger delete-btn" data-id="${row.id}">
+                                    <i class="bi bi-trash"></i>
                                 </button>
                             </div>
                         `
                     }
                 ],
-                dom: '<"row"<"col-md-6"l><"col-md-6"f>>' +
-                    '<"row"<"col-md-12"tr>>' +
-                    '<"row"<"col-md-5"i><"col-md-7"p>>',
-                initComplete: function () {
-                    const filterContainer = $('.filter-buttons-container');
-                    filterContainer.addClass('d-flex justify-content-center');
-
-                    const filterButtonsHtml = `
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-secondary btn-sm active" data-type="">
-                                All <span class="badge bg-secondary ms-1">${totalCount}</span>
-                            </button>
-                            ${Object.entries(typeConfig).map(([type, config]) => `
-                                <button type="button" class="btn btn-outline-secondary btn-sm" data-type="${type}">
-                                    <i class="bi ${config.icon} me-1"></i>
-                                    ${config.label} <span class="badge bg-secondary ms-1">${typeCounts[type] || 0}</span>
-                                </button>
-                            `).join('')}
-                        </div>
-                    `;
-
-                    filterContainer.html(filterButtonsHtml);
-
-                    filterContainer.find('button').on('click', (e) => {
-                        const button = $(e.currentTarget);
-                        filterContainer.find('button').removeClass('active');
-                        button.addClass('active');
-
-                        const type = button.data('type');
-                        this.api()
-                            .column(3)
-                            .search(type || '', true, false)
-                            .draw();
-                    });
-                }
+                order: [[1, 'asc']], // Sort by name by default
+                pageLength: 25,
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                language: {
+                    search: "",
+                    searchPlaceholder: "Search products..."
+                },
+                scrollX: true,
+                scrollY: true,
+                fixedHeader: true
             });
 
             console.log('DataTable initialized');
@@ -274,11 +287,32 @@ class ProductManager {
                 await this.deleteProduct(id);
             }
         });
+
+        // Fix hash format to be 'add-product'
+        $('#productsTable').on('click', '.edit-btn', (e) => {
+            const id = $(e.target).closest('button').data('id');
+            window.location.hash = `add-product/${id}`;
+        });
     }
 
     setupFormEventListeners() {
         const form = document.getElementById('productForm');
         if (form) {
+            // Convert text to uppercase while typing
+            const textInputs = ['productName', 'productDescription'];
+            textInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('input', (e) => {
+                        const start = e.target.selectionStart;
+                        const end = e.target.selectionEnd;
+                        e.target.value = e.target.value.toUpperCase();
+                        // Restore cursor position
+                        e.target.setSelectionRange(start, end);
+                    });
+                }
+            });
+
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 await this.saveProduct();
@@ -414,61 +448,82 @@ class ProductManager {
                 // Show the fields container first
                 $('#productFields').show();
 
-                // Then populate the fields
-                document.getElementById('productName').value = data.name;
-                document.getElementById('productDescription').value = data.description || '';
+                // First set the supplier and wait for categories to load
+                await $('#productSupplier').val(data.supplier_id).trigger('change');
+
+                // Wait for categories to be loaded
+                await this.loadCategories();
+
+                // Then populate all other fields
+                document.getElementById('productName').value = data.name.toUpperCase();
+                document.getElementById('productDescription').value = (data.description || '').toUpperCase();
                 document.getElementById('productPrice').value = data.unit_price;
                 document.getElementById('productStock').value = data.stock_quantity;
                 document.getElementById('productMinStock').value = data.min_stock;
                 document.getElementById('productType').value = data.type;
-                $('#productSupplier').val(data.supplier_id).trigger('change');
+
+                // Now set the category
                 $('#productCategory').val(data.category_id).trigger('change');
             }
         } catch (error) {
             console.error('Error loading product:', error);
-            alert('Failed to load product');
+            showToast('Failed to load product', 'error');
         }
     }
 
     async saveProduct() {
         try {
             const supplierId = document.getElementById('productSupplier').value;
+            const categoryId = document.getElementById('productCategory').value;
+
+            // Validate required fields
             if (!supplierId) {
                 alert('Please select a supplier');
                 return;
             }
 
-            const productData = {
-                name: document.getElementById('productName').value,
-                category_id: document.getElementById('productCategory').value,
-                supplier_id: supplierId,
-                type: document.getElementById('productType').value,
-                description: document.getElementById('productDescription').value,
-                unit_price: parseFloat(document.getElementById('productPrice').value),
-                stock_quantity: parseInt(document.getElementById('productStock').value),
-                min_stock: parseInt(document.getElementById('productMinStock').value)
-            };
-
-            let error;
-            const productId = document.getElementById('productId').value;
-
-            if (productId) {
-                ({ error } = await supabase
-                    .from('products')
-                    .update(productData)
-                    .eq('id', productId));
-            } else {
-                ({ error } = await supabase
-                    .from('products')
-                    .insert([productData]));
+            if (!categoryId) {
+                alert('Please select a category');
+                return;
             }
 
-            if (error) throw error;
+            const productData = {
+                name: document.getElementById('productName').value.toUpperCase(),
+                category_id: categoryId,
+                supplier_id: supplierId,
+                type: document.getElementById('productType').value,
+                description: document.getElementById('productDescription').value?.toUpperCase() || '',
+                unit_price: parseFloat(document.getElementById('productPrice').value) || 0,
+                stock_quantity: parseInt(document.getElementById('productStock').value) || 0,
+                min_stock: parseInt(document.getElementById('productMinStock').value) || 1
+            };
+
+            // Get productId from class property
+            if (this.productId) {
+                const { error } = await supabase
+                    .from('products')
+                    .update(productData)
+                    .eq('id', this.productId);
+
+                if (error) {
+                    console.error('Update error:', error);
+                    throw error;
+                }
+            } else {
+                const { error } = await supabase
+                    .from('products')
+                    .insert([productData]);
+
+                if (error) {
+                    console.error('Insert error:', error);
+                    throw error;
+                }
+            }
 
             window.location.hash = 'products-list';
         } catch (error) {
             console.error('Error saving product:', error);
-            alert('Failed to save product');
+            alert('Failed to save product: ' + error.message);
         }
     }
 

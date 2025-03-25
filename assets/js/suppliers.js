@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { showToast } from './utils.js';
 
 class SupplierManager {
     static instance = null;
@@ -215,14 +216,28 @@ class SupplierManager {
             if (error) throw error;
 
             window.location.hash = 'suppliers-list';
+            showToast('Supplier saved successfully', 'success');
         } catch (error) {
             console.error('Error saving supplier:', error);
-            alert('Failed to save supplier');
+            showToast('Failed to save supplier', 'error');
         }
     }
 
     async deleteSupplier(id) {
         try {
+            // First check if supplier has any products
+            const { data: products, error: checkError } = await supabase
+                .from('products')
+                .select('id, name')
+                .eq('supplier_id', id);
+
+            if (checkError) throw checkError;
+
+            if (products && products.length > 0) {
+                showToast('Cannot delete supplier: This supplier has associated products. Please reassign or delete the products first.', 'warning');
+                return;
+            }
+
             const { error } = await supabase
                 .from('suppliers')
                 .delete()
@@ -234,9 +249,10 @@ class SupplierManager {
                 this.table.destroy();
             }
             await this.initializeDataTable();
+            showToast('Supplier deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting supplier:', error);
-            alert('Failed to delete supplier');
+            showToast('Failed to delete supplier', 'error');
         }
     }
 }

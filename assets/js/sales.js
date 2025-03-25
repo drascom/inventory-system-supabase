@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import stockManager from './stock.js';
+import { showToast } from './utils.js';
 
 class SaleManager {
     static instance = null;
@@ -330,9 +331,10 @@ class SaleManager {
             });
 
             window.location.hash = 'sales-list';
+            showToast('Sale saved successfully', 'success');
         } catch (error) {
             console.error('Error saving sale:', error);
-            alert('Failed to save sale');
+            showToast('Failed to save sale', 'error');
         }
     }
 
@@ -375,9 +377,10 @@ class SaleManager {
                 this.table.destroy();
             }
             await this.initializeDataTable();
+            showToast('Sale deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting sale:', error);
-            alert('Failed to delete sale');
+            showToast('Failed to delete sale', 'error');
         }
     }
 

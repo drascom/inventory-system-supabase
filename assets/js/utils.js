@@ -5,6 +5,28 @@
  * @param {number} [duration=3000] - How long to show the toast in milliseconds
  */
 export function showToast(message, type = 'info', duration = 3000) {
+    // Define type-specific styles
+    const typeStyles = {
+        success: {
+            bgClass: 'bg-success',
+            icon: 'bi-check-circle'
+        },
+        error: {
+            bgClass: 'bg-danger',
+            icon: 'bi-x-circle'
+        },
+        warning: {
+            bgClass: 'bg-warning',
+            icon: 'bi-exclamation-triangle'
+        },
+        info: {
+            bgClass: 'bg-info',
+            icon: 'bi-info-circle'
+        }
+    };
+
+    const style = typeStyles[type] || typeStyles.info;
+
     // Create toast container if it doesn't exist
     let toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
@@ -21,21 +43,10 @@ export function showToast(message, type = 'info', duration = 3000) {
     toastEl.setAttribute('aria-live', 'assertive');
     toastEl.setAttribute('aria-atomic', 'true');
 
-    // Set background color based on type
-    const bgClass = {
-        success: 'bg-success',
-        error: 'bg-danger',
-        warning: 'bg-warning',
-        info: 'bg-info'
-    }[type] || 'bg-info';
-
     // Create toast content
     toastEl.innerHTML = `
-        <div class="toast-header ${bgClass} text-white">
-            <i class="bi ${type === 'success' ? 'bi-check-circle' : 
-                         type === 'error' ? 'bi-x-circle' :
-                         type === 'warning' ? 'bi-exclamation-triangle' : 
-                         'bi-info-circle'} me-2"></i>
+        <div class="toast-header ${style.bgClass} text-white">
+            <i class="bi ${style.icon} me-2"></i>
             <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>

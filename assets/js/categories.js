@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { showToast } from './utils.js';
 
 class CategoryManager {
     static instance = null;
@@ -169,9 +170,10 @@ class CategoryManager {
 
             // Redirect without showing success alert
             window.location.hash = 'categories-list';
+            showToast('Category saved successfully', 'success');
         } catch (error) {
             console.error('Error saving category:', error);
-            alert('Failed to save category');
+            showToast('Failed to save category', 'error');
         }
     }
 
@@ -184,16 +186,14 @@ class CategoryManager {
 
             if (error) throw error;
 
-            // Destroy existing table
             if (this.table) {
                 this.table.destroy();
             }
-
-            // Reinitialize the table
             await this.initializeDataTable();
+            showToast('Category deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting category:', error);
-            alert('Failed to delete category');
+            showToast('Failed to delete category', 'error');
         }
     }
 }

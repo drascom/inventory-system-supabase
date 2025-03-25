@@ -117,7 +117,6 @@ class ProfileManager {
         try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
-            // Include user ID in the path
             const filePath = `${this.user.id}/${fileName}`;
 
             // Delete old avatar if exists
@@ -137,11 +136,10 @@ class ProfileManager {
                     }
                 } catch (error) {
                     console.error('Error removing old avatar:', error);
-                    // Continue with upload even if delete fails
                 }
             }
 
-            // Upload new file to Supabase Storage
+            // Upload new file
             const { data, error: uploadError } = await supabase.storage
                 .from('inventory-avatar')
                 .upload(filePath, file, {
@@ -179,7 +177,7 @@ class ProfileManager {
 
     async updateProfile() {
         try {
-            const username = document.getElementById('username').value.trim(); // Add trim()
+            const username = document.getElementById('username').value.trim();
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
@@ -192,12 +190,11 @@ class ProfileManager {
                         username: username,
                         updated_at: new Date()
                     }, {
-                        onConflict: 'id'  // Add this to ensure proper upsert
+                        onConflict: 'id'
                     });
 
                 if (profileError) throw profileError;
 
-                // Update the username in navbar if we're on the dashboard
                 const navUserName = document.getElementById('userName');
                 if (navUserName) {
                     navUserName.textContent = username;
@@ -207,7 +204,7 @@ class ProfileManager {
             // Update password if provided
             if (newPassword) {
                 if (newPassword !== confirmPassword) {
-                    showToast('New passwords do not match', 'error');
+                    showToast('New passwords do not match', 'warning');
                     return;
                 }
 

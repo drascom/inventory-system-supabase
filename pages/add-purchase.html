@@ -1,51 +1,55 @@
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 id="formTitle">Add Purchase</h2>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2" id="formTitle">Add Bulk Purchase</h1>
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
+            <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="#purchases-list">Purchases</a></li>
-                <li class="breadcrumb-item active" id="breadcrumbAction">Add</li>
+                <li class="breadcrumb-item active" id="breadcrumbAction">Add Bulk</li>
             </ol>
         </nav>
     </div>
 
     <div class="card">
         <div class="card-body">
-            <form id="purchaseForm" class="row g-3">
-                <input type="hidden" id="purchaseId">
-
-                <div class="col-12 col-sm-6 col-lg-4">
+            <form id="bulkPurchaseForm" class="row g-3">
+                <div class="col-12 col-sm-6">
                     <label for="purchaseSupplier" class="form-label">Supplier</label>
                     <select class="form-select" id="purchaseSupplier" required>
                         <option value="">Select Supplier</option>
                     </select>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <label for="purchaseProduct" class="form-label">Product</label>
-                    <select class="form-select" id="purchaseProduct" required>
-                        <option value="">Select Product</option>
-                    </select>
-                </div>
-
-                <div class="col-12 col-sm-6 col-lg-4">
+                <div class="col-12 col-sm-6">
                     <label for="purchaseReference" class="form-label">Reference Number</label>
                     <input type="text" class="form-control" id="purchaseReference" required>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <label for="purchaseQuantity" class="form-label">Quantity</label>
-                    <input type="number" class="form-control" id="purchaseQuantity" required min="1">
-                </div>
-
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <label for="purchaseUnitPrice" class="form-label">Unit Price</label>
-                    <input type="number" class="form-control" id="purchaseUnitPrice" required step="0.01" min="0">
-                </div>
-
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <label for="purchaseTotalAmount" class="form-label">Total Amount</label>
-                    <input type="number" class="form-control" id="purchaseTotalAmount" readonly step="0.01">
+                <div class="col-12">
+                    <table class="table table-bordered" id="productsTable">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <!-- Product rows will be added here -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                <td><span id="grandTotal">0.00</span></td>
+                                <td>
+                                    <button type="button" class="btn btn-success btn-sm" id="addProductRow">
+                                        <i class="bi bi-plus-lg"></i> Add Product
+                                    </button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
 
                 <div class="col-12">
@@ -55,7 +59,7 @@
 
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Save Purchase
+                        <i class="bi bi-save"></i> Save Bulk Purchase
                     </button>
                     <a href="#purchases-list" class="btn btn-secondary">
                         <i class="bi bi-x-circle"></i> Cancel
@@ -67,7 +71,7 @@
 </div>
 
 <script type="module">
-    import purchaseManager from '../assets/js/purchases.js';
-    console.log('Purchase form page loaded');
-    await purchaseManager.initializeForm();
+    import bulkPurchaseManager from '../assets/js/bulk-purchases.js';
+    console.log('Bulk Purchase form page loaded');
+    await bulkPurchaseManager.initializeForm();
 </script>

@@ -181,7 +181,7 @@
                 <tr>
                     <td>${product.name}</td>
                     <td>${product.stock_quantity}</td>
-                    <td>${product.min_stock_quantity || 10}</td>
+                    <td>${product.min_stock || 'N/A'}</td>
                 </tr>
             `).join('');
 

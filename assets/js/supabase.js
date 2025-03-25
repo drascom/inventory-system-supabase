@@ -1,5 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 import { config } from './config.js'
+import { showToast } from './utils.js'
 
 export const supabase = createClient(config.supabaseUrl, config.supabaseKey)
 

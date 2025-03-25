@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import stockManager from './stock.js';
+import { showToast } from './utils.js';
 
 class PurchaseManager {
     static instance = null;
@@ -38,6 +39,7 @@ class PurchaseManager {
         if (userError) throw userError;
         this.currentUser = user;
 
+        this.setupListEventListeners();
         await this.initializePurchasesTable();
         await this.initializeReturnsTable();
 
@@ -75,7 +77,7 @@ class PurchaseManager {
             await this.checkForEdit();
         } catch (error) {
             console.error('Error initializing form:', error);
-            alert('Error initializing form. Please try again.');
+            showToast('Error initializing form. Please try again.', 'error');
         }
     }
 
@@ -90,28 +92,40 @@ class PurchaseManager {
                         company_name
                     ),
                     products (
-                        name
+                        name,
+                        unit_price
                     )
-                `);
+                `)
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            console.log('Purchases fetched:', purchases);
+            if (this.table) {
+                this.table.destroy();
+            }
 
             this.table = $('#purchasesTable').DataTable({
                 data: purchases,
                 columns: [
-                    { data: 'id', visible: false },
-                    { data: 'reference_number' },
+                    // { data: 'id', visible: false },
+                    {
+                        data: 'reference_number',
+                        render: (data) => data || 'N/A'
+                    },
                     { data: 'suppliers.company_name' },
                     { data: 'products.name' },
-                    { data: 'quantity' },
+                    {
+                        data: 'quantity',
+                        className: 'text-end'
+                    },
                     {
                         data: 'unit_price',
+                        className: 'text-end',
                         render: (data) => `$${parseFloat(data).toFixed(2)}`
                     },
                     {
                         data: 'total_amount',
+                        className: 'text-end',
                         render: (data) => `$${parseFloat(data).toFixed(2)}`
                     },
                     {
@@ -123,32 +137,37 @@ class PurchaseManager {
                         orderable: false,
                         className: 'text-center',
                         render: (data, type, row) => `
-                            <a href="#add-purchase/${row.id}" class="btn btn-sm btn-link text-primary">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="btn-group">
+                                <a href="#edit-purchase/${row.id}" class="btn btn-sm btn-link text-primary">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-link text-danger delete-purchase" data-id="${row.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         `
                     }
                 ],
                 responsive: true,
-                order: [[7, 'desc']] // Order by created_at descending
+                order: [[7, 'desc']], // Order by created_at descending
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
+            });
+
+            $('#purchasesTable').on('click', '.delete-purchase', async (e) => {
+                e.preventDefault();
+                const button = $(e.target).closest('.delete-purchase');
+                const id = button.data('id');
+                if (confirm('Are you sure you want to delete this purchase?')) {
+                    await this.deletePurchase(id);
+                }
             });
 
             console.log('DataTable initialized');
         } catch (error) {
             console.error('Error initializing DataTable:', error);
         }
-    }
-
-    setupListEventListeners() {
-        $('#purchasesTable').on('click', '.delete-btn', async (e) => {
-            const id = $(e.target).closest('button').data('id');
-            if (confirm('Are you sure you want to delete this purchase?')) {
-                await this.deletePurchase(id);
-            }
-        });
     }
 
     setupFormEventListeners() {
@@ -342,28 +361,58 @@ class PurchaseManager {
             });
 
             window.location.hash = 'purchases-list';
+            showToast('Purchase saved successfully', 'success');
         } catch (error) {
             console.error('Error saving purchase:', error);
-            alert('Failed to save purchase');
+            showToast('Failed to save purchase', 'error');
         }
     }
 
     async deletePurchase(id) {
         try {
-            const { error } = await supabase
+            // First ensure we have the current user
+            if (!this.currentUser) {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                this.currentUser = user;
+            }
+
+            // Get the purchase details for stock reversal
+            const { data: purchase, error: fetchError } = await supabase
+                .from('purchases')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (fetchError) throw fetchError;
+
+            const { error: deleteError } = await supabase
                 .from('purchases')
                 .delete()
                 .eq('id', id);
 
-            if (error) throw error;
+            if (deleteError) throw deleteError;
+
+            // Record stock movement to reverse the purchase
+            await stockManager.recordStockMovement({
+                product_id: purchase.product_id,
+                movement_type: 'ADJUSTMENT', // This is valid
+                quantity: -purchase.quantity, // Negative quantity to remove from stock
+                reference_type: 'ADJUSTMENT', // Changed to use a valid reference type
+                reference_id: id,
+                notes: `Reversal of deleted purchase ${purchase.reference_number || id}`,
+                user_id: this.currentUser.id
+            });
 
             if (this.table) {
                 this.table.destroy();
             }
             await this.initializePurchasesTable();
+            showToast('Purchase deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting purchase:', error);
-            alert('Failed to delete purchase');
+            showToast('Failed to delete purchase', 'error');
+            throw error; // Re-throw to see the full error in console
         }
     }
 

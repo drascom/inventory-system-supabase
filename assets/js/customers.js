@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { showToast } from './utils.js';
 
 class CustomerManager {
     static instance = null;
@@ -171,9 +172,10 @@ class CustomerManager {
             if (error) throw error;
 
             window.location.hash = 'customers-list';
+            showToast('Customer saved successfully', 'success');
         } catch (error) {
             console.error('Error saving customer:', error);
-            alert('Failed to save customer');
+            showToast('Failed to save customer', 'error');
         }
     }
 
@@ -190,9 +192,10 @@ class CustomerManager {
                 this.table.destroy();
             }
             await this.initializeDataTable();
+            showToast('Customer deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting customer:', error);
-            alert('Failed to delete customer');
+            showToast('Failed to delete customer', 'error');
         }
     }
 }

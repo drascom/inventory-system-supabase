@@ -211,3 +211,30 @@ CREATE TRIGGER update_profiles_updated_at
 
 -- Create index for better search performance
 CREATE INDEX idx_profiles_username ON profiles(username);
+
+-- First, let's check existing foreign key constraints for both product and supplier relationships
+SELECT conname, conrelid::regclass AS table_name, 
+       confrelid::regclass AS referenced_table,
+       pg_get_constraintdef(oid) AS constraint_def
+FROM pg_constraint 
+WHERE contype = 'f' 
+  AND (conrelid = 'purchases'::regclass 
+       OR confrelid = 'purchases'::regclass);
+
+-- If the supplier relationship is missing, add it:
+ALTER TABLE purchases
+ADD CONSTRAINT fk_purchases_supplier
+FOREIGN KEY (supplier_id) 
+REFERENCES suppliers(id);
+
+-- Add index for supplier_id if it doesn't exist
+CREATE INDEX IF NOT EXISTS idx_purchases_supplier_id 
+ON purchases(supplier_id);
+
+-- Verify both constraints are now in place
+SELECT conname, conrelid::regclass AS table_name, 
+       confrelid::regclass AS referenced_table,
+       pg_get_constraintdef(oid) AS constraint_def
+FROM pg_constraint 
+WHERE contype = 'f' 
+  AND conrelid = 'purchases'::regclass;
