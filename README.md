@@ -2,6 +2,19 @@
 
 A modern web-based inventory management system built with Supabase as the backend. This project demonstrates how to create a full-featured inventory system using Supabase's powerful features including authentication, real-time database, and storage capabilities.
 
+## Recent Updates
+
+### Enhanced Product Management Interface
+- **Quick Supplier Addition**: Added ability to create new suppliers directly from the product form
+  - Quick add button next to supplier selection
+  - Modal dialog for rapid supplier creation
+  - Automatic supplier list refresh and selection
+- **Improved Form Layout**:
+  - Reorganized product form for better usability
+  - Category and Type selections grouped in one row
+  - Financial and stock controls (Price, Stock Count, Min Stock) consolidated in one row
+  - Responsive design maintained across all screen sizes
+
 ## Developed With
 
 ### ![VS Code](assets/images/vscode.svg) Visual Studio Code
@@ -298,7 +311,10 @@ cp assets/js/config.example.js assets/js/config.js
 
 - **Inventory Management**
   - Product Management
-  - Stock tracking
+    - Streamlined product creation interface
+    - Quick supplier addition functionality
+    - Organized form layout with logical grouping
+    - Real-time stock tracking
   - Category organization
   - Multiple product types (Sellable, Consumable, Fixture)
 
