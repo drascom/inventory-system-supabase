@@ -11,6 +11,15 @@ class SupplierManager {
 
         this.table = null;
         this.supplierId = null;
+        this.europeanCountries = [
+            'United Kingdom', 'Turkiye', 'Germany', 'France', 'Italy', 'Spain',
+            'Poland', 'Romania', 'Netherlands', 'Belgium', 'Greece',
+            'Czech Republic', 'Portugal', 'Sweden', 'Hungary', 'Austria',
+            'Switzerland', 'Bulgaria', 'Denmark', 'Finland', 'Slovakia',
+            'Norway', 'Ireland', 'Croatia', 'Moldova', 'Albania',
+            'Lithuania', 'Slovenia', 'Latvia', 'Estonia', 'Luxembourg',
+            'Montenegro', 'Malta', 'Iceland'
+        ];
     }
 
     async initializeList() {
@@ -31,6 +40,7 @@ class SupplierManager {
             return;
         }
 
+        this.initializeCountrySelect();
         this.setupFormEventListeners();
         await this.checkForEdit();
     }
@@ -69,12 +79,8 @@ class SupplierManager {
                     { data: 'contact_person' },
                     { data: 'email' },
                     { data: 'phone' },
-                    { data: 'city' },
+                    { data: 'postal_code' },
                     { data: 'country' },
-                    {
-                        data: 'created_at',
-                        render: (data) => new Date(data).toLocaleDateString()
-                    },
                     {
                         data: null,
                         orderable: false,
@@ -126,6 +132,29 @@ class SupplierManager {
         }
     }
 
+    initializeCountrySelect() {
+        const countrySelect = $('#country');
+        countrySelect.empty();
+
+        // Add default option
+        countrySelect.append(new Option('Select Country', ''));
+
+        // Add all European countries
+        this.europeanCountries.forEach(country => {
+            countrySelect.append(new Option(country, country));
+        });
+
+        // Initialize Select2
+        countrySelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Select Country',
+            width: '100%'
+        });
+
+        // Set default value to United Kingdom
+        countrySelect.val('United Kingdom').trigger('change');
+    }
+
     async loadSupplier(id) {
         try {
             const { data: supplier, error } = await supabase
@@ -138,14 +167,12 @@ class SupplierManager {
 
             if (supplier) {
                 document.getElementById('companyName').value = supplier.company_name;
-                document.getElementById('contactPerson').value = supplier.contact_person;
-                document.getElementById('email').value = supplier.email;
-                document.getElementById('phone').value = supplier.phone;
-                document.getElementById('address').value = supplier.address;
-                document.getElementById('city').value = supplier.city;
-                document.getElementById('state').value = supplier.state;
-                document.getElementById('postalCode').value = supplier.postal_code;
-                document.getElementById('country').value = supplier.country;
+                document.getElementById('contactPerson').value = supplier.contact_person || '';
+                document.getElementById('email').value = supplier.email || '';
+                document.getElementById('phone').value = supplier.phone || '';
+                document.getElementById('address').value = supplier.address || '';
+                document.getElementById('postalCode').value = supplier.postal_code || '';
+                $('#country').val(supplier.country || 'United Kingdom').trigger('change');
             }
         } catch (error) {
             console.error('Error loading supplier:', error);
@@ -155,28 +182,31 @@ class SupplierManager {
 
     async saveSupplier() {
         try {
+            const companyName = document.getElementById('companyName').value.trim();
+
+            if (!companyName) {
+                alert('Company name is required');
+                return;
+            }
+
             const formData = {
-                company_name: document.getElementById('companyName').value,
-                contact_person: document.getElementById('contactPerson').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                address: document.getElementById('address').value,
-                city: document.getElementById('city').value,
-                state: document.getElementById('state').value,
-                postal_code: document.getElementById('postalCode').value,
-                country: document.getElementById('country').value
+                company_name: companyName,
+                contact_person: document.getElementById('contactPerson').value || null,
+                email: document.getElementById('email').value || null,
+                phone: document.getElementById('phone').value || null,
+                address: document.getElementById('address').value || null,
+                postal_code: document.getElementById('postalCode').value || null,
+                country: $('#country').val() || 'United Kingdom'
             };
 
             let error;
 
             if (this.supplierId) {
-                // Update existing supplier
                 ({ error } = await supabase
                     .from('suppliers')
                     .update(formData)
                     .eq('id', this.supplierId));
             } else {
-                // Insert new supplier
                 ({ error } = await supabase
                     .from('suppliers')
                     .insert([formData]));

@@ -1,5 +1,49 @@
 import { supabase } from './supabase.js';
 
+/**
+ * Product Management System Updates - Version 1.2.0
+ * Last Updated: [Current Date]
+ * 
+ * CHANGES:
+ * ========
+ * 1. User Interface Improvements
+ *    - Reorganized form layout for better user experience
+ *    - Grouped related fields:
+ *      * Category and Type selectors in single row
+ *      * Financial and inventory controls (Price, Stock, Min Stock) consolidated
+ * 
+ * 2. Quick Supplier Addition Feature
+ *    - Added modal dialog for rapid supplier creation
+ *    - Implemented real-time supplier list updates
+ *    - Auto-selection of newly created suppliers
+ * 
+ * 3. Form Validation Enhancements
+ *    - Added validation for quick supplier addition
+ *    - Improved feedback for required fields
+ * 
+ * 4. Technical Improvements
+ *    - Optimized Select2 initialization
+ *    - Enhanced modal handling
+ *    - Improved error handling and user feedback
+ * 
+ * USAGE:
+ * ======
+ * Quick Add Supplier:
+ * 1. Click '+' button next to supplier dropdown
+ * 2. Enter company name in modal
+ * 3. Submit to create supplier and auto-select
+ * 
+ * Form Layout:
+ * - Top row: Category and Type selection
+ * - Middle row: Price, Stock Count, and Minimum Stock
+ * - Bottom: Description field
+ * 
+ * @class ProductManager
+ * @requires bootstrap 5.x
+ * @requires select2 4.x
+ * @requires supabase-js
+ */
+
 class ProductManager {
     static instance = null;
 
@@ -11,6 +55,7 @@ class ProductManager {
 
         this.table = null;
         this.productId = null;
+        this.quickAddModal = null;
     }
 
     async initializeList() {
@@ -31,9 +76,18 @@ class ProductManager {
             return;
         }
 
+        // Initialize the modal
+        this.quickAddModal = new bootstrap.Modal(document.getElementById('quickAddSupplierModal'));
+
+        await this.loadSuppliers();
+        this.setupSupplierEventListener();
+        this.setupQuickAddSupplierListener();
         this.setupFormEventListeners();
-        await this.loadCategories(); // Additional step for products
-        await this.checkForEdit();
+
+        if (window.location.hash.includes('/')) {
+            await this.loadCategories();
+            await this.checkForEdit();
+        }
     }
 
     checkDependencies() {
@@ -57,6 +111,9 @@ class ProductManager {
                     *,
                     categories (
                         name
+                    ),
+                    suppliers (
+                        company_name
                     )
                 `);
 
@@ -229,6 +286,41 @@ class ProductManager {
         }
     }
 
+    setupSupplierEventListener() {
+        $('#productSupplier').on('change', async (e) => {
+            const supplierId = e.target.value;
+            if (supplierId) {
+                await this.loadCategories();
+                $('#productFields').slideDown();
+            } else {
+                $('#productFields').slideUp();
+                // Clear all fields when supplier is deselected
+                $('#productForm')[0].reset();
+                $('#productCategory').val('').trigger('change');
+            }
+        });
+    }
+
+    setupQuickAddSupplierListener() {
+        // Handle quick add button click
+        document.getElementById('quickAddSupplierBtn').addEventListener('click', async () => {
+            const form = document.getElementById('quickAddSupplierForm');
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const companyName = document.getElementById('quickSupplierName').value.trim();
+            await this.quickAddSupplier(companyName);
+        });
+
+        // Reset form when modal is hidden
+        document.getElementById('quickAddSupplierModal').addEventListener('hidden.bs.modal', () => {
+            document.getElementById('quickAddSupplierForm').reset();
+            document.getElementById('quickAddSupplierForm').classList.remove('was-validated');
+        });
+    }
+
     async checkForEdit() {
         const path = window.location.hash.split('/');
         if (path.length > 1) {
@@ -266,6 +358,38 @@ class ProductManager {
         }
     }
 
+    async loadSuppliers() {
+        try {
+            const { data: suppliers, error } = await supabase
+                .from('suppliers')
+                .select('id, company_name')
+                .order('company_name');
+
+            if (error) throw error;
+
+            const supplierSelect = $('#productSupplier');
+            supplierSelect.empty().append('<option value="">Select Supplier</option>');
+
+            suppliers.forEach(supplier => {
+                supplierSelect.append(new Option(supplier.company_name, supplier.id));
+            });
+
+            // Reinitialize Select2
+            supplierSelect.select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Select Supplier',
+                width: '80%'
+            });
+
+            // Fix the Select2 container width when used in input-group
+            supplierSelect.on('select2:open', () => {
+                document.querySelector('.select2-container--open').style.width = 'auto';
+            });
+        } catch (error) {
+            console.error('Error loading suppliers:', error);
+        }
+    }
+
     async loadProduct() {
         try {
             const { data, error } = await supabase
@@ -275,6 +399,10 @@ class ProductManager {
                     categories (
                         id,
                         name
+                    ),
+                    suppliers (
+                        id,
+                        company_name
                     )
                 `)
                 .eq('id', this.productId)
@@ -282,26 +410,38 @@ class ProductManager {
 
             if (error) throw error;
 
-            // Populate form with data
-            document.getElementById('productId').value = data.id;
-            document.getElementById('productName').value = data.name;
-            document.getElementById('productType').value = data.type;
-            $('#productCategory').val(data.category_id).trigger('change');
-            document.getElementById('productDescription').value = data.description || '';
-            document.getElementById('productPrice').value = data.unit_price;
-            document.getElementById('productStock').value = data.stock_quantity;
-            document.getElementById('productMinStock').value = data.min_stock || 0;
+            if (data) {
+                // Show the fields container first
+                $('#productFields').show();
+
+                // Then populate the fields
+                document.getElementById('productName').value = data.name;
+                document.getElementById('productDescription').value = data.description || '';
+                document.getElementById('productPrice').value = data.unit_price;
+                document.getElementById('productStock').value = data.stock_quantity;
+                document.getElementById('productMinStock').value = data.min_stock;
+                document.getElementById('productType').value = data.type;
+                $('#productSupplier').val(data.supplier_id).trigger('change');
+                $('#productCategory').val(data.category_id).trigger('change');
+            }
         } catch (error) {
             console.error('Error loading product:', error);
-            alert('Failed to load product details');
+            alert('Failed to load product');
         }
     }
 
     async saveProduct() {
         try {
+            const supplierId = document.getElementById('productSupplier').value;
+            if (!supplierId) {
+                alert('Please select a supplier');
+                return;
+            }
+
             const productData = {
                 name: document.getElementById('productName').value,
                 category_id: document.getElementById('productCategory').value,
+                supplier_id: supplierId,
                 type: document.getElementById('productType').value,
                 description: document.getElementById('productDescription').value,
                 unit_price: parseFloat(document.getElementById('productPrice').value),
@@ -313,13 +453,11 @@ class ProductManager {
             const productId = document.getElementById('productId').value;
 
             if (productId) {
-                // Update existing product
                 ({ error } = await supabase
                     .from('products')
                     .update(productData)
                     .eq('id', productId));
             } else {
-                // Insert new product
                 ({ error } = await supabase
                     .from('products')
                     .insert([productData]));
@@ -350,6 +488,31 @@ class ProductManager {
         } catch (error) {
             console.error('Error deleting product:', error);
             alert('Failed to delete product');
+        }
+    }
+
+    async quickAddSupplier(companyName) {
+        try {
+            const { data, error } = await supabase
+                .from('suppliers')
+                .insert([{ company_name: companyName }])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Close the modal
+            this.quickAddModal.hide();
+
+            // Reload suppliers and select the new one
+            await this.loadSuppliers();
+            $('#productSupplier').val(data.id).trigger('change');
+
+            // Show success message
+            alert('Supplier added successfully');
+        } catch (error) {
+            console.error('Error adding supplier:', error);
+            alert('Failed to add supplier');
         }
     }
 }

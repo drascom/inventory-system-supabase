@@ -11,57 +11,42 @@
 
     <div class="card">
         <div class="card-body">
-            <form id="supplierForm" class="row g-3">
+            <form id="supplierForm" class="row g-3 needs-validation" novalidate>
                 <div class="col-12 col-sm-6">
                     <label for="companyName" class="form-label">Company Name</label>
-                    <input type="text" class="form-control" id="companyName" name="company_name" required>
+                    <input type="text" class="form-control" id="companyName" name="companyName" required>
                     <div class="invalid-feedback">Please enter company name</div>
                 </div>
 
                 <div class="col-12 col-sm-6">
                     <label for="contactPerson" class="form-label">Contact Person</label>
-                    <input type="text" class="form-control" id="contactPerson" name="contact_person" required>
-                    <div class="invalid-feedback">Please enter contact person name</div>
+                    <input type="text" class="form-control" id="contactPerson" name="contactPerson">
                 </div>
 
                 <div class="col-12 col-sm-6">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
-                    <div class="invalid-feedback">Please enter a valid email</div>
+                    <input type="email" class="form-control" id="email" name="email">
                 </div>
 
                 <div class="col-12 col-sm-6">
                     <label for="phone" class="form-label">Phone</label>
-                    <input type="tel" class="form-control" id="phone" name="phone" required>
-                    <div class="invalid-feedback">Please enter phone number</div>
+                    <input type="tel" class="form-control" id="phone" name="phone">
                 </div>
 
                 <div class="col-12">
                     <label for="address" class="form-label">Address</label>
-                    <textarea class="form-control" id="address" name="address" rows="2" required></textarea>
-                    <div class="invalid-feedback">Please enter address</div>
+                    <input type="text" class="form-control" id="address" name="address">
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <label for="city" class="form-label">City</label>
-                    <input type="text" class="form-control" id="city" name="city" required>
-                    <div class="invalid-feedback">Please enter city</div>
-                </div>
-
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <label for="state" class="form-label">State</label>
-                    <input type="text" class="form-control" id="state" name="state">
-                </div>
-
-                <div class="col-12 col-sm-6 col-lg-3">
+                <div class="col-12 col-sm-6">
                     <label for="postalCode" class="form-label">Postal Code</label>
-                    <input type="text" class="form-control" id="postalCode" name="postal_code">
+                    <input type="text" class="form-control" id="postalCode" name="postalCode">
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-3">
+                <div class="col-12 col-sm-6">
                     <label for="country" class="form-label">Country</label>
-                    <input type="text" class="form-control" id="country" name="country" required>
-                    <div class="invalid-feedback">Please enter country</div>
+                    <select class="form-select" id="country" name="country">
+                    </select>
                 </div>
 
                 <div class="col-12">

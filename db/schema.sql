@@ -8,10 +8,8 @@ CREATE TABLE suppliers (
     email VARCHAR(100),
     phone VARCHAR(20),
     address TEXT,
-    city VARCHAR(50),
-    state VARCHAR(50),
     postal_code VARCHAR(20),
-    country VARCHAR(50),
+    country VARCHAR(50) DEFAULT 'United Kingdom',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -56,6 +54,7 @@ CREATE TABLE products (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     category_id UUID REFERENCES categories(id),
+    supplier_id UUID REFERENCES suppliers(id),
     unit_price DECIMAL(10,2) NOT NULL,
     stock_quantity INTEGER DEFAULT 0,
     min_stock INTEGER DEFAULT 1,
@@ -66,6 +65,7 @@ CREATE TABLE products (
 -- Create indexes for products
 CREATE INDEX idx_products_type ON products(type);
 CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_supplier ON products(supplier_id);
 
 -- purchases table
 CREATE TABLE purchases (
