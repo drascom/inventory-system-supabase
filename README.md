@@ -357,3 +357,60 @@ Feel free to fork this repository and submit pull requests. You can also open is
 ## License
 
 MIT License - feel free to use this project for learning or business purposes.
+
+## Version History
+
+### Version 1.3.0 (Current)
+**Released:** 2024-01-20
+- Enhanced Product Management Interface
+  - Quick Supplier Addition feature
+  - Improved form layout and organization
+  - Consolidated financial controls
+  - Better responsive design
+- Bulk Purchase Management
+  - Multi-product purchase entry
+  - Automatic total calculations
+  - Supplier-specific product filtering
+- Purchase Returns System
+  - Complete returns workflow
+  - Status tracking
+  - Automated stock adjustments
+
+### Version 1.2.0
+**Released:** 2023-12-15
+- Stock Movement Tracking
+  - Automated stock updates
+  - Movement history
+  - Reference type validation
+- Enhanced Security
+  - Improved authentication flows
+  - Added storage policies
+  - Updated database access controls
+
+### Version 1.1.0
+**Released:** 2023-11-01
+- User Interface Improvements
+  - Responsive design implementation
+  - DataTables integration
+  - Select2 for enhanced dropdowns
+- Database Optimizations
+  - Added performance indexes
+  - Implemented triggers for timestamps
+  - Stock movement automation
+
+### Version 1.0.0
+**Released:** 2023-10-01
+- Initial Release
+  - Basic inventory management
+  - User authentication
+  - Product CRUD operations
+  - Simple purchase and sales tracking
+  - Basic reporting
+
+## Upcoming Features (Planned)
+- Advanced reporting and analytics
+- Barcode scanning support
+- Multi-warehouse management
+- Mobile app integration
+- API documentation
+- Batch operations for stock adjustments
