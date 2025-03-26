@@ -77,12 +77,14 @@ class CategoryManager {
                         orderable: false,
                         className: 'text-center',
                         render: (data, type, row) => `
-                            <a href="#add-category/${row.id}" class="btn btn-sm btn-link text-primary">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="btn-group">
+                                <a href="#add-category/${row.id}" class="btn btn-sm btn-link text-primary" data-bs-toggle="tooltip" data-bs-title="Edit Category">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}" data-bs-toggle="tooltip" data-bs-title="Delete Category">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         `
                     }
                 ],
@@ -96,6 +98,8 @@ class CategoryManager {
     }
 
     setupListEventListeners() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
         $('#categoriesTable').on('click', '.delete-btn', async (e) => {
             const id = $(e.target).closest('button').data('id');
             if (confirm('Are you sure you want to delete this category?')) {

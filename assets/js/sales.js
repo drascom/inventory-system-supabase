@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
-import stockManager from './stock.js';
 import { showToast } from './utils.js';
+import stockManager from './stock.js';
 
 class SaleManager {
     static instance = null;
@@ -14,30 +14,7 @@ class SaleManager {
         this.table = null;
         this.saleId = null;
         this.currentUser = null;
-    }
-
-    async initializeList() {
-        console.log('Initializing SaleManager List');
-        if (!this.checkDependencies()) {
-            console.error('Dependencies not met');
-            return;
-        }
-
-        await this.initializeDataTable();
-        this.setupListEventListeners();
-    }
-
-    async initializeForm() {
-        console.log('Initializing SaleManager Form');
-        if (!this.checkDependencies()) {
-            console.error('Dependencies not met');
-            return;
-        }
-
-        this.setupFormEventListeners();
-        await this.loadCustomers();
-        await this.loadProducts();
-        await this.checkForEdit();
+        this.products = [];
     }
 
     checkDependencies() {
@@ -50,6 +27,17 @@ class SaleManager {
             return false;
         }
         return true;
+    }
+
+    async initializeList() {
+        console.log('Initializing SaleManager List');
+        if (!this.checkDependencies()) {
+            console.error('Dependencies not met');
+            return;
+        }
+
+        await this.initializeDataTable();
+        this.setupListEventListeners();
     }
 
     async initializeDataTable() {
@@ -65,29 +53,37 @@ class SaleManager {
                     products (
                         name
                     )
-                `);
+                `)
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            console.log('Sales fetched:', sales);
+            if (this.table) {
+                this.table.destroy();
+            }
 
             this.table = $('#salesTable').DataTable({
                 data: sales,
                 columns: [
-                    {
-                        data: 'id',
-                        visible: false
-                    },
                     { data: 'customers.name' },
                     { data: 'products.name' },
-                    { data: 'quantity' },
+                    {
+                        data: 'quantity',
+                        className: 'text-end'
+                    },
+                    {
+                        data: 'unit_type',
+                        render: (data) => data === 'BOX' ? 'Box' : 'Piece'
+                    },
                     {
                         data: 'unit_price',
-                        render: (data) => `$${parseFloat(data).toFixed(2)}`
+                        className: 'text-end',
+                        render: (data) => `£${parseFloat(data).toFixed(2)}`
                     },
                     {
                         data: 'total_amount',
-                        render: (data) => `$${parseFloat(data).toFixed(2)}`
+                        className: 'text-end',
+                        render: (data) => `£${parseFloat(data).toFixed(2)}`
                     },
                     {
                         data: 'sale_date',
@@ -98,22 +94,96 @@ class SaleManager {
                         orderable: false,
                         className: 'text-center',
                         render: (data, type, row) => `
-                            <a href="#add-sale/${row.id}" class="btn btn-sm btn-link text-primary">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="btn-group">
+                                <a href="#edit-sale/${row.id}" 
+                                   class="btn btn-sm btn-link text-primary" 
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-title="Edit Sale">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button class="btn btn-sm btn-link text-danger delete-sale" 
+                                        data-id="${row.id}" 
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-title="Delete Sale">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         `
                     }
                 ],
-                responsive: true,
-                order: [[6, 'desc']] // Order by sale date descending
+                drawCallback: function () {
+                    // Reinitialize tooltips after table redraw
+                    $('[data-bs-toggle="tooltip"]').tooltip();
+                }
             });
 
             console.log('DataTable initialized');
         } catch (error) {
             console.error('Error initializing DataTable:', error);
+            showToast('Error loading sales data', 'error');
+        }
+    }
+
+    setupListEventListeners() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+
+        $('#salesTable').on('click', '.delete-sale', async (e) => {
+            e.preventDefault();
+            const button = $(e.target).closest('.delete-sale');
+            const id = button.data('id');
+
+            // Destroy tooltip before showing confirm dialog
+            $(button).tooltip('dispose');
+
+            if (confirm('Are you sure you want to delete this sale?')) {
+                await this.deleteSale(id);
+            } else {
+                // Reinitialize tooltip if deletion was cancelled
+                $(button).tooltip();
+            }
+        });
+
+        // Handle tooltip cleanup on table updates
+        $('#salesTable').on('draw.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+
+        // Destroy tooltips before table updates
+        $('#salesTable').on('preDrawCallback.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        });
+
+        // Cleanup tooltips before any modals
+        $('.modal').on('show.bs.modal', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        });
+
+        // Reinitialize tooltips after modals close
+        $('.modal').on('hidden.bs.modal', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    }
+
+    async initializeForm() {
+        console.log('Initializing SaleManager Form');
+        if (!this.checkDependencies()) {
+            console.error('Dependencies not met');
+            return;
+        }
+
+        try {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError) throw userError;
+            this.currentUser = user;
+
+            await this.loadCustomers();
+            await this.loadProducts();
+            this.setupFormEventListeners();
+            await this.checkForEdit();
+        } catch (error) {
+            console.error('Error initializing form:', error);
+            showToast('Error initializing form. Please try again.', 'error');
         }
     }
 
@@ -127,20 +197,31 @@ class SaleManager {
             if (error) throw error;
 
             const customerSelect = $('#saleCustomer');
+
+            // Destroy existing Select2 if it exists
+            if (customerSelect.hasClass('select2-hidden-accessible')) {
+                customerSelect.select2('destroy');
+            }
+
+            // Clear and add the default option
             customerSelect.empty().append('<option value="">Select Customer</option>');
 
+            // Add all customers
             customers.forEach(customer => {
                 customerSelect.append(new Option(customer.name, customer.id));
             });
 
+            // Initialize Select2
             customerSelect.select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Select Customer',
-                width: '100%'
+                width: '100%',
+                dropdownParent: customerSelect.parent()
             });
+
         } catch (error) {
             console.error('Error loading customers:', error);
-            alert('Failed to load customers');
+            showToast('Failed to load customers', 'error');
         }
     }
 
@@ -148,96 +229,120 @@ class SaleManager {
         try {
             const { data: products, error } = await supabase
                 .from('products')
-                .select('id, name, unit_price')
-                .eq('type', 'SELLABLE')  // Only load sellable products
+                .select('id, name, unit_price, pieces_per_box')
+                .eq('type', 'SELLABLE')
                 .order('name');
 
             if (error) throw error;
 
+            this.products = products;
             const productSelect = $('#saleProduct');
+
+            // Destroy existing Select2 if it exists
+            if (productSelect.hasClass('select2-hidden-accessible')) {
+                productSelect.select2('destroy');
+            }
+
+            // Clear and add the default option
             productSelect.empty().append('<option value="">Select Product</option>');
 
-            products.forEach(product => {
+            // Add all products
+            this.products.forEach(product => {
                 const option = new Option(product.name, product.id);
                 $(option).data('price', product.unit_price);
+                $(option).data('pieces_per_box', product.pieces_per_box || 1);
                 productSelect.append(option);
             });
 
+            // Initialize Select2
             productSelect.select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Select Product',
-                width: '100%'
+                width: '100%',
+                dropdownParent: productSelect.parent()
             });
+
         } catch (error) {
             console.error('Error loading products:', error);
-            alert('Failed to load products');
+            showToast('Failed to load products', 'error');
         }
     }
 
-    setupListEventListeners() {
-        $('#salesTable').on('click', '.delete-btn', async (e) => {
-            const id = $(e.target).closest('button').data('id');
-            if (confirm('Are you sure you want to delete this sale?')) {
-                await this.deleteSale(id);
+    setupFormEventListeners() {
+        // Product selection change handler
+        $('#saleProduct').on('change', (e) => {
+            const selectedOption = $(e.target).find('option:selected');
+            const boxPrice = parseFloat(selectedOption.data('price')) || 0;
+            const piecesPerBox = parseInt(selectedOption.data('pieces_per_box')) || 1;
+            const unitType = $('#saleUnitType').val();
+
+            console.log('Product change:', { boxPrice, piecesPerBox, unitType }); // Debug log
+
+            const unitPrice = unitType === 'PIECE' ? (boxPrice / piecesPerBox) : boxPrice;
+            $('#saleUnitPrice').val(unitPrice.toFixed(2));
+            this.updateQuantityLabel();
+            this.updateTotalAmount();
+        });
+
+        // Unit type change handler
+        $('#saleUnitType').on('change', (e) => {
+            const $selectedProduct = $('#saleProduct').find('option:selected');
+            const boxPrice = parseFloat($selectedProduct.data('price')) || 0;
+            const piecesPerBox = parseInt($selectedProduct.data('pieces_per_box')) || 1;
+            const unitType = e.target.value;
+
+            console.log('Unit type change:', { boxPrice, piecesPerBox, unitType }); // Debug log
+
+            let newUnitPrice;
+            if (unitType === 'PIECE') {
+                // Converting from BOX to PIECE
+                newUnitPrice = boxPrice / piecesPerBox;
+            } else {
+                // Converting from PIECE to BOX
+                newUnitPrice = boxPrice;
             }
+
+            console.log('New unit price:', newUnitPrice); // Debug log
+
+            $('#saleUnitPrice').val(newUnitPrice.toFixed(2));
+            this.updateQuantityLabel();
+            this.updateTotalAmount();
+        });
+
+        // Quantity and price change handlers
+        $('#saleQuantity, #saleUnitPrice').on('input', () => this.updateTotalAmount());
+
+        // Form submit handler
+        $('#saleForm').on('submit', async (e) => {
+            e.preventDefault();
+            await this.saveSale();
         });
     }
 
-    setupFormEventListeners() {
-        const form = document.getElementById('saleForm');
-        if (form) {
-            // Update unit price when product is selected
-            $('#saleProduct').on('select2:select', (e) => {
-                const selectedOption = e.params.data.element;
-                const unitPrice = $(selectedOption).data('price') || 0;
-                document.getElementById('saleUnitPrice').value = unitPrice;
-                this.updateTotalAmount();
-            });
+    updateQuantityLabel() {
+        const selectedOption = $('#saleProduct').find('option:selected');
+        const piecesPerBox = parseInt(selectedOption.data('pieces_per_box')) || 1;
+        const unitType = $('#saleUnitType').val();
+        const quantityLabel = $('label[for="saleQuantity"]');
+        const quantityHelp = $('#quantityHelp');
 
-            // Update total amount when quantity changes
-            document.getElementById('saleQuantity').addEventListener('input', () => {
-                this.updateTotalAmount();
-            });
-
-            // Check stock availability when quantity changes
-            document.getElementById('saleQuantity').addEventListener('input', async (e) => {
-                const productId = document.getElementById('saleProduct').value;
-                const quantity = parseInt(e.target.value);
-
-                if (productId && quantity) {
-                    const { available, currentStock } = await this.checkStockAvailability(productId, quantity);
-
-                    if (!available) {
-                        alert(`Insufficient stock. Current stock: ${currentStock}`);
-                        e.target.value = currentStock;
-                        this.updateTotalAmount();
-                    }
-                }
-            });
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const productId = document.getElementById('saleProduct').value;
-                const quantity = parseInt(document.getElementById('saleQuantity').value);
-
-                const { available, currentStock } = await this.checkStockAvailability(productId, quantity);
-
-                if (!available) {
-                    alert(`Cannot process sale. Insufficient stock. Current stock: ${currentStock}`);
-                    return;
-                }
-
-                await this.saveSale();
-            });
+        if (unitType === 'BOX') {
+            quantityLabel.text('Quantity (Boxes)');
+            quantityHelp.text(`1 box = ${piecesPerBox} pieces`).show();
+        } else {
+            quantityLabel.text('Quantity (Pieces)');
+            quantityHelp.text(`${piecesPerBox} pieces = 1 box`).show();
         }
     }
 
     updateTotalAmount() {
-        const quantity = parseFloat(document.getElementById('saleQuantity').value) || 0;
-        const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
+        const quantity = parseFloat($('#saleQuantity').val()) || 0;
+        const unitPrice = parseFloat($('#saleUnitPrice').val()) || 0;
         const totalAmount = quantity * unitPrice;
-        document.getElementById('saleTotalAmount').value = totalAmount.toFixed(2);
+
+        console.log('Updating total:', { quantity, unitPrice, totalAmount }); // Debug log
+
+        $('#saleTotalAmount').val(totalAmount.toFixed(2));
     }
 
     async checkForEdit() {
@@ -251,161 +356,208 @@ class SaleManager {
     }
 
     async loadSale() {
+        if (!this.saleId) return;
+
         try {
-            const { data, error } = await supabase
+            const { data: sale, error } = await supabase
                 .from('sales')
-                .select('*')
+                .select(`
+                    *,
+                    customers (
+                        id,
+                        name
+                    ),
+                    products (
+                        id,
+                        name,
+                        unit_price
+                    )
+                `)
                 .eq('id', this.saleId)
                 .single();
 
             if (error) throw error;
 
-            document.getElementById('saleId').value = data.id;
-            $('#saleCustomer').val(data.customer_id).trigger('change');
-            $('#saleProduct').val(data.product_id).trigger('change');
-            document.getElementById('saleQuantity').value = data.quantity;
-            document.getElementById('saleUnitPrice').value = data.unit_price;
-            document.getElementById('saleTotalAmount').value = data.total_amount;
+            // Wait for customers and products to be loaded first
+            await this.loadCustomers();
+            await this.loadProducts();
+
+            // Set the customer in Select2
+            $('#saleCustomer').val(sale.customers.id).trigger('change');
+
+            // Set the product in Select2
+            $('#saleProduct').val(sale.product_id).trigger('change');
+
+            // Set other form values
+            $('#saleId').val(sale.id);
+            $('#saleQuantity').val(sale.quantity);
+            $('#saleUnitPrice').val(sale.unit_price);
+            $('#saleUnitType').val(sale.unit_type);
+            $('#saleTotalAmount').val(sale.total_amount);
+            $('#saleDate').val(sale.sale_date);
+            $('#saleNotes').val(sale.notes || '');
+
+            // Update the quantity label to show pieces per box
+            this.updateQuantityLabel();
+
         } catch (error) {
             console.error('Error loading sale:', error);
-            alert('Failed to load sale details');
+            showToast('Failed to load sale details', 'error');
         }
     }
 
     async saveSale() {
         try {
-            // Get current user
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError) throw userError;
-            this.currentUser = user;
+            const saleId = $('#saleId').val();
+            const customerId = $('#saleCustomer').val();
+            const productId = $('#saleProduct').val();
+            const unitType = $('#saleUnitType').val();
+            const quantity = parseInt($('#saleQuantity').val());
+            const unitPrice = parseFloat($('#saleUnitPrice').val());
+            const totalAmount = parseFloat($('#saleTotalAmount').val());
+            const saleDate = $('#saleDate').val();
+            const notes = $('#saleNotes').val();
+
+            // Calculate actual quantity in pieces for storage
+            const selectedProduct = $('#saleProduct').find('option:selected');
+            const piecesPerBox = selectedProduct.data('pieces_per_box') || 1;
+            const actualQuantity = unitType === 'BOX' ? quantity * piecesPerBox : quantity;
 
             const saleData = {
-                customer_id: document.getElementById('saleCustomer').value,
-                product_id: document.getElementById('saleProduct').value,
-                quantity: parseInt(document.getElementById('saleQuantity').value),
-                unit_price: parseFloat(document.getElementById('saleUnitPrice').value),
-                total_amount: parseFloat(document.getElementById('saleTotalAmount').value),
-                sale_date: document.getElementById('saleDate').value || new Date().toISOString().split('T')[0],
-                created_by: this.currentUser.id,
-                selling_user_id: this.currentUser.id
+                customer_id: customerId,
+                product_id: productId,
+                quantity: actualQuantity,
+                unit_type: unitType,
+                unit_price: unitPrice,
+                total_amount: totalAmount,
+                sale_date: saleDate,
+                notes: notes,
+                updated_at: new Date(),
+                updated_by: this.currentUser.id
             };
 
-            let result;
-            const saleId = document.getElementById('saleId').value;
-
+            let error;
             if (saleId) {
                 // Update existing sale
-                const { data, error } = await supabase
+                ({ error } = await supabase
                     .from('sales')
-                    .update({
-                        ...saleData,
-                        updated_by: this.currentUser.id
-                    })
-                    .eq('id', saleId)
-                    .select()
-                    .single();
-
-                if (error) throw error;
-                result = data;
+                    .update(saleData)
+                    .eq('id', saleId));
             } else {
                 // Insert new sale
-                const { data, error } = await supabase
+                saleData.created_by = this.currentUser.id;
+                ({ error } = await supabase
                     .from('sales')
-                    .insert([saleData])
-                    .select()
-                    .single();
-
-                if (error) throw error;
-                result = data;
+                    .insert(saleData));
             }
 
-            // Record stock movement
-            await stockManager.recordStockMovement({
-                product_id: saleData.product_id,
-                movement_type: 'SALE',
-                quantity: -saleData.quantity,
-                reference_type: 'SALE',
-                reference_id: result.id,
-                notes: `Sale to customer ${saleData.customer_id}`,
-                user_id: this.currentUser.id
-            });
+            if (error) throw error;
 
+            showToast(saleId ? 'Sale updated successfully' : 'Sale created successfully', 'success');
             window.location.hash = 'sales-list';
-            showToast('Sale saved successfully', 'success');
         } catch (error) {
             console.error('Error saving sale:', error);
             showToast('Failed to save sale', 'error');
         }
     }
 
-    async deleteSale(id) {
+    async initializeCustomerSales() {
+        console.log('Initializing Customer Sales');
         try {
-            // Get current user first
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError) throw userError;
-            this.currentUser = user;
+            const customerId = window.location.hash.split('/')[1];
 
-            // Get the sale details before deleting
-            const { data: sale, error: fetchError } = await supabase
-                .from('sales')
-                .select('*')
-                .eq('id', id)
+            // Get customer details
+            const { data: customer, error: customerError } = await supabase
+                .from('customers')
+                .select('name')
+                .eq('id', customerId)
                 .single();
 
-            if (fetchError) throw fetchError;
+            if (customerError) throw customerError;
 
-            // Delete the sale
-            const { error: deleteError } = await supabase
+            // Set customer name in header
+            $('#customerName').text(customer.name);
+
+            // Get customer sales
+            const { data: sales, error } = await supabase
                 .from('sales')
-                .delete()
-                .eq('id', id);
+                .select(`
+                    *,
+                    products (
+                        name
+                    )
+                `)
+                .eq('customer_id', customerId)
+                .order('sale_date', { ascending: false });
 
-            if (deleteError) throw deleteError;
-
-            // Reverse the stock movement (add back to stock)
-            await stockManager.recordStockMovement({
-                product_id: sale.product_id,
-                movement_type: 'ADJUSTMENT',
-                quantity: sale.quantity, // Positive quantity to add back to stock
-                reference_type: 'SALE_DELETION',
-                reference_id: id,
-                notes: `Reversal of deleted sale ${id}`,
-                user_id: this.currentUser.id
-            });
+            if (error) throw error;
 
             if (this.table) {
                 this.table.destroy();
             }
-            await this.initializeDataTable();
-            showToast('Sale deleted successfully', 'success');
+
+            this.table = $('#customerSalesTable').DataTable({
+                data: sales,
+                columns: [
+                    { data: 'products.name' },
+                    {
+                        data: 'quantity',
+                        className: 'text-end'
+                    },
+                    {
+                        data: 'unit_type',
+                        render: (data) => data === 'BOX' ? 'Box' : 'Piece'
+                    },
+                    {
+                        data: 'unit_price',
+                        className: 'text-end',
+                        render: (data) => `£${parseFloat(data).toFixed(2)}`
+                    },
+                    {
+                        data: 'total_amount',
+                        className: 'text-end',
+                        render: (data) => `£${parseFloat(data).toFixed(2)}`
+                    },
+                    {
+                        data: 'sale_date',
+                        render: (data) => new Date(data).toLocaleDateString()
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        className: 'text-center',
+                        render: (data, type, row) => `
+                            <div class="btn-group">
+                                <a href="#add-sale/${row.id}" class="btn btn-sm btn-link text-primary" data-bs-toggle="tooltip" data-bs-title="Edit Sale">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button class="btn btn-sm btn-link text-danger delete-sale" data-id="${row.id}" data-bs-toggle="tooltip" data-bs-title="Delete Sale">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        `
+                    }
+                ],
+                drawCallback: function () {
+                    // Reinitialize tooltips after table redraw
+                    $('[data-bs-toggle="tooltip"]').tooltip();
+                }
+            });
+
+            // Add tooltip event listeners for customer sales table
+            $('#customerSalesTable').on('draw.dt', () => {
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            });
+
+            $('#customerSalesTable').on('preDrawCallback.dt', () => {
+                $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+            });
         } catch (error) {
-            console.error('Error deleting sale:', error);
-            showToast('Failed to delete sale', 'error');
-        }
-    }
-
-    // Add method to check stock availability before sale
-    async checkStockAvailability(productId, requestedQuantity) {
-        try {
-            const { data: product, error } = await supabase
-                .from('products')
-                .select('stock_quantity')
-                .eq('id', productId)
-                .single();
-
-            if (error) throw error;
-
-            return {
-                available: product.stock_quantity >= requestedQuantity,
-                currentStock: product.stock_quantity
-            };
-        } catch (error) {
-            console.error('Error checking stock availability:', error);
-            throw error;
+            console.error('Error initializing customer sales:', error);
+            showToast('Error loading customer sales data', 'error');
         }
     }
 }
 
-// Create a single instance
-const saleManager = new SaleManager();
-export default saleManager;
+// Create and export a singleton instance
+export default new SaleManager();

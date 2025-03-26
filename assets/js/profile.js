@@ -1,12 +1,14 @@
 import { supabase } from './supabase.js';
 import { showToast } from './utils.js';
+import { getCurrentUser, getCurrentUserProfile, updateStoredProfile } from './supabase.js';
 
 class ProfileManager {
     constructor() {
         this.avatarInput = null;
         this.avatarPreview = null;
         this.profileForm = null;
-        this.user = null;
+        this.user = getCurrentUser();
+        this.profile = getCurrentUserProfile();
     }
 
     async initializeProfile() {
@@ -15,51 +17,12 @@ class ProfileManager {
         this.avatarPreview = document.getElementById('avatarPreview');
         this.profileForm = document.getElementById('profileForm');
 
-        // Get current user
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) {
+        if (!this.user) {
             showToast('Error loading profile', 'error');
             return;
         }
-        this.user = user;
 
-        // Check if profile exists, if not create one
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', this.user.id)
-            .single();
-
-        if (profileError && profileError.code === 'PGRST116') {
-            // Get public URL for default avatar
-            const { data: { publicUrl: defaultAvatarUrl } } = supabase.storage
-                .from('inventory-avatar')
-                .getPublicUrl('default/avatar.png');
-
-            // Profile doesn't exist, create one with default avatar
-            const { error: createError } = await supabase
-                .from('profiles')
-                .insert({
-                    id: this.user.id,
-                    username: null,
-                    avatar_url: defaultAvatarUrl,
-                    created_at: new Date(),
-                    updated_at: new Date()
-                });
-
-            if (createError) {
-                console.error('Error creating profile:', createError);
-                showToast('Error creating profile', 'error');
-                return;
-            }
-        } else if (profileError) {
-            console.error('Error checking profile:', profileError);
-            showToast('Error checking profile', 'error');
-            return;
-        }
-
-        // Initialize form
-        this.setupEventListeners();
+        // Load profile data from localStorage
         await this.loadUserProfile();
     }
 
@@ -81,30 +44,21 @@ class ProfileManager {
 
     async loadUserProfile() {
         try {
-            // Set email
+            // Set email from stored user data
             document.getElementById('profileEmail').textContent = this.user.email;
 
             // Set member since date
             const memberSince = new Date(this.user.created_at).toLocaleDateString();
             document.getElementById('memberSince').textContent = memberSince;
 
-            // Get profile data from profiles table
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('username, avatar_url')
-                .eq('id', this.user.id)
-                .single();
-
-            if (error) throw error;
-
             // Set username if exists
-            if (profile?.username) {
-                document.getElementById('username').value = profile.username;
+            if (this.profile?.username) {
+                document.getElementById('username').value = this.profile.username;
             }
 
             // Set avatar if exists
-            if (profile?.avatar_url) {
-                this.avatarPreview.src = profile.avatar_url;
+            if (this.profile?.avatar_url) {
+                this.avatarPreview.src = this.profile.avatar_url;
             }
 
         } catch (error) {
@@ -118,26 +72,6 @@ class ProfileManager {
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `${this.user.id}/${fileName}`;
-
-            // Delete old avatar if exists
-            const { data: oldAvatar } = await supabase
-                .from('profiles')
-                .select('avatar_url')
-                .eq('id', this.user.id)
-                .single();
-
-            if (oldAvatar?.avatar_url) {
-                try {
-                    const oldPath = new URL(oldAvatar.avatar_url).pathname.split('inventory-avatar/')[1];
-                    if (oldPath) {
-                        await supabase.storage
-                            .from('inventory-avatar')
-                            .remove([oldPath]);
-                    }
-                } catch (error) {
-                    console.error('Error removing old avatar:', error);
-                }
-            }
 
             // Upload new file
             const { data, error: uploadError } = await supabase.storage
@@ -164,6 +98,9 @@ class ProfileManager {
                 });
 
             if (updateError) throw updateError;
+
+            // Update stored profile data
+            await updateStoredProfile({ avatar_url: publicUrl });
 
             // Update preview
             this.avatarPreview.src = publicUrl;

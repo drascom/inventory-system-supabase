@@ -386,8 +386,9 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script type="module">
-        import { checkAuth, signOut } from './assets/js/supabase.js';
-        import { supabase } from './assets/js/supabase.js';
+        import { checkAuth, signOut, supabase } from './assets/js/supabase.js';
+        import { getCurrentUser, getCurrentUserProfile } from './assets/js/supabase.js';
+        import { cleanupTooltips } from './assets/js/utils.js';
 
         let isLoading = false;
         let currentLoadRequest = null;
@@ -398,6 +399,7 @@
             'products-list': 'pages/products-list.html',
             'product-form': 'pages/product-form.html',
             'add-sale': 'pages/add-sale.html',
+            'edit-sale': 'pages/edit-sale.html',
             'sales-list': 'pages/sales-list.html',
             'add-category': 'pages/add-category.html',
             'categories-list': 'pages/categories-list.html',
@@ -415,6 +417,7 @@
             'add-return-purchase': 'pages/add-return-purchase.html',
             'return-purchase-list': 'pages/return-purchase-list.html',
             'profile': 'pages/profile.html',
+            'customer-sales': 'pages/customer-sales.html',
         };
 
         function debounce(func, wait) {
@@ -426,6 +429,8 @@
         }
 
         async function loadContent(page, retryCount = 0) {
+            cleanupTooltips(); // Clean before loading new content
+
             // Get the base page name (before any parameters)
             const basePage = page.split('/')[0];
 
@@ -526,21 +531,16 @@
 
         async function updateUserName() {
             try {
-                // Get current user
-                const { data: { user }, error: userError } = await supabase.auth.getUser();
-                if (userError) throw userError;
-
-                // Get profile data
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('username')
-                    .eq('id', user.id)
-                    .single();
-
-                if (profileError) {
-                    console.error('Profile error:', profileError);
-                    throw profileError;
+                // Wait for auth check to complete
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
                 }
+
+                // Get session data
+                const sessionData = JSON.parse(localStorage.getItem('app_session'));
+                const profile = sessionData?.user?.profile;
 
                 // Update the userName element
                 const userNameElement = document.getElementById('userName');
@@ -548,7 +548,6 @@
                     // Only use email as fallback if username is null or empty
                     const displayName = profile?.username || user.email;
                     userNameElement.textContent = displayName;
-                    console.log('Display name set to:', displayName); // Debug log
                 }
             } catch (error) {
                 console.error('Error updating username:', error);
@@ -559,21 +558,15 @@
             try {
                 const user = await checkAuth();
                 if (!user) {
-                    document.getElementById('mainContent').innerHTML =
-                        '<div class="alert alert-warning">You are not logged in.</div>';
+                    window.location.href = 'login.html';
                     return;
                 }
 
-                // Call updateUserName instead of directly setting email
                 await updateUserName();
 
                 const logoutBtn = document.getElementById('logoutBtn');
                 if (logoutBtn) {
-                    logoutBtn.addEventListener('click', async () => {
-                        contentLoadedFlags = {};
-                        await signOut();
-                        window.location.href = 'index.html';
-                    });
+                    logoutBtn.addEventListener('click', signOut);
                 }
 
                 // Get initial hash or set to dashboard
@@ -581,14 +574,12 @@
                 if (!window.location.hash) {
                     window.location.hash = '#' + initialHash;
                 } else {
-                    // Load the initial page directly
                     await loadContent(initialHash);
                 }
 
             } catch (error) {
                 console.error('Initialization error:', error);
-                document.getElementById('mainContent').innerHTML =
-                    '<div class="alert alert-danger">Initialization failed.</div>';
+                showToast('Failed to initialize page', 'error');
             }
         }
 
@@ -601,6 +592,13 @@
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', initializePage);
+
+        // Add auth state change listener to update username
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                updateUserName();
+            }
+        });
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -663,6 +661,28 @@
             window.addEventListener('hashchange', updateActiveNavItem);
             // Initial active state
             updateActiveNavItem();
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Clean tooltips on any navigation
+            window.addEventListener('hashchange', () => {
+                cleanupTooltips();
+            });
+
+            // Clean tooltips before unload
+            window.addEventListener('beforeunload', () => {
+                cleanupTooltips();
+            });
+
+            // Handle modal events globally
+            document.addEventListener('show.bs.modal', () => {
+                cleanupTooltips();
+            });
+
+            document.addEventListener('hidden.bs.modal', () => {
+                cleanupTooltips();
+            });
         });
     </script>
 </body>

@@ -1,0 +1,82 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 id="formTitle">Edit Sale</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#sales-list">Sales</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbAction">Edit</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="saleForm" class="row g-3">
+                <input type="hidden" id="saleId">
+
+                <div class="col-md-6">
+                    <label for="saleCustomer" class="form-label">Customer</label>
+                    <select class="form-select select2-input" id="saleCustomer" name="customer_id" required>
+                        <option value="">Select Customer</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="saleDate" class="form-label">Sale Date</label>
+                    <input type="date" class="form-control" id="saleDate" required>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="saleProduct" class="form-label">Product</label>
+                    <select class="form-select select2-input" id="saleProduct" name="product_id" required>
+                        <option value="">Select Product</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="saleUnitType" class="form-label">Unit Type</label>
+                    <select class="form-select" id="saleUnitType" required>
+                        <option value="BOX">Box</option>
+                        <option value="PIECE">Piece</option>
+                    </select>
+                    <small id="quantityHelp" class="form-text text-muted"></small>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="saleQuantity" class="form-label">Quantity</label>
+                    <input type="number" class="form-control" id="saleQuantity" required min="1">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="saleUnitPrice" class="form-label">Unit Price</label>
+                    <input type="number" class="form-control" id="saleUnitPrice" required step="0.01" min="0">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="saleTotalAmount" class="form-label">Total Amount</label>
+                    <input type="number" class="form-control" id="saleTotalAmount" readonly step="0.01">
+                </div>
+
+                <div class="col-12">
+                    <label for="saleNotes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="saleNotes" rows="3"></textarea>
+                </div>
+
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Update Sale
+                    </button>
+                    <a href="#sales-list" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import saleManager from '../assets/js/sales.js';
+    console.log('Edit Sale form page loaded');
+    await saleManager.initializeForm();
+</script>

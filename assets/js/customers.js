@@ -49,23 +49,21 @@ class CustomerManager {
     }
 
     async initializeDataTable() {
-        console.log('Initializing DataTable');
         try {
             const { data: customers, error } = await supabase
                 .from('customers')
-                .select('*');
+                .select('*')
+                .order('name');
 
             if (error) throw error;
 
-            console.log('Customers fetched:', customers);
+            if (this.table) {
+                this.table.destroy();
+            }
 
             this.table = $('#customersTable').DataTable({
                 data: customers,
                 columns: [
-                    {
-                        data: 'id',
-                        visible: false
-                    },
                     { data: 'name' },
                     { data: 'email' },
                     { data: 'phone' },
@@ -78,16 +76,20 @@ class CustomerManager {
                         orderable: false,
                         className: 'text-center',
                         render: (data, type, row) => `
-                            <a href="#add-customer/${row.id}" class="btn btn-sm btn-link text-primary">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="btn-group">
+                                <a href="#customer-sales/${row.id}" class="btn btn-sm btn-link text-info" data-bs-toggle="tooltip" data-bs-title="View Customer Sales">
+                                    <i class="bi bi-list-ul"></i>
+                                </a>
+                                <a href="#add-customer/${row.id}" class="btn btn-sm btn-link text-primary" data-bs-toggle="tooltip" data-bs-title="Edit Customer">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}" data-bs-toggle="tooltip" data-bs-title="Delete Customer">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         `
                     }
-                ],
-                responsive: true
+                ]
             });
 
             console.log('DataTable initialized');
@@ -97,6 +99,8 @@ class CustomerManager {
     }
 
     setupListEventListeners() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
         $('#customersTable').on('click', '.delete-btn', async (e) => {
             const id = $(e.target).closest('button').data('id');
             if (confirm('Are you sure you want to delete this customer?')) {

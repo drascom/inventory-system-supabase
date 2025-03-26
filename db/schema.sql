@@ -58,6 +58,7 @@ CREATE TABLE products (
     unit_price DECIMAL(10,2) NOT NULL,
     stock_quantity INTEGER DEFAULT 0,
     min_stock INTEGER DEFAULT 1,
+    pieces_per_box INTEGER DEFAULT 1,
     type VARCHAR(20) NOT NULL CHECK (type IN ('SELLABLE', 'CONSUMABLE', 'FIXTURE')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -103,9 +104,13 @@ CREATE TABLE sales (
     customer_id UUID REFERENCES customers(id),
     product_id UUID REFERENCES products(id),
     quantity INTEGER NOT NULL,
+    unit_type VARCHAR(10) NOT NULL CHECK (unit_type IN ('BOX', 'PIECE')),
     unit_price DECIMAL(10,2) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     sale_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    actual_quantity INTEGER NOT NULL,
+    pieces_per_box INTEGER NOT NULL,
+    selling_user_id UUID NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_by UUID NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

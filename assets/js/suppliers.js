@@ -59,15 +59,15 @@ class SupplierManager {
     }
 
     async initializeDataTable() {
-        console.log('Initializing DataTable');
         try {
             const { data: suppliers, error } = await supabase
                 .from('suppliers')
-                .select('*');
+                .select(`
+                    *,
+                    products:products(count)
+                `);
 
             if (error) throw error;
-
-            console.log('Suppliers fetched:', suppliers);
 
             this.table = $('#suppliersTable').DataTable({
                 data: suppliers,
@@ -87,36 +87,97 @@ class SupplierManager {
                         orderable: false,
                         className: 'text-center',
                         render: (data, type, row) => `
-                            <a href="#add-supplier/${row.id}" class="btn btn-sm btn-link text-primary">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="btn-group">
+                                <a href="#add-supplier/${row.id}" 
+                                   class="btn btn-sm btn-link text-primary" 
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-title="Edit Supplier">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button class="btn btn-sm btn-link text-danger delete-btn" 
+                                        data-id="${row.id}" 
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-title="Delete Supplier">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         `
                     }
                 ],
-                responsive: true
+                responsive: {
+                    details: {
+                        type: 'column',
+                        target: 'tr',
+                        renderer: function (api, rowIdx, columns) {
+                            const data = columns.reduce((acc, col) => {
+                                if (col.hidden) {
+                                    acc += `
+                                        <tr>
+                                            <td class="fw-bold">${col.title}:</td>
+                                            <td>${col.data}</td>
+                                        </tr>`;
+                                }
+                                return acc;
+                            }, '');
+
+                            return data ?
+                                `<table class="table table-sm table-borderless m-0">${data}</table>` :
+                                false;
+                        }
+                    }
+                },
+                order: [[1, 'asc']], // Sort by company name by default
+                drawCallback: function () {
+                    // Reinitialize tooltips after table redraw
+                    $('[data-bs-toggle="tooltip"]').tooltip();
+                }
             });
 
             console.log('DataTable initialized');
         } catch (error) {
             console.error('Error initializing DataTable:', error);
+            showToast('Error loading suppliers', 'error');
         }
     }
 
     setupListEventListeners() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+
+        // Delete supplier handler
         $('#suppliersTable').on('click', '.delete-btn', async (e) => {
-            const id = $(e.target).closest('button').data('id');
+            e.preventDefault();
+            const button = $(e.target).closest('button');
+            const id = button.data('id');
+
+            // Destroy tooltip before showing confirm dialog
+            $(button).tooltip('dispose');
+
             if (confirm('Are you sure you want to delete this supplier?')) {
                 await this.deleteSupplier(id);
+            } else {
+                // Reinitialize tooltip if deletion was cancelled
+                $(button).tooltip();
             }
+        });
+
+        // Handle tooltip cleanup on table updates
+        $('#suppliersTable').on('draw.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+
+        // Destroy tooltips before table updates
+        $('#suppliersTable').on('preDrawCallback.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
         });
     }
 
     setupFormEventListeners() {
         const form = document.getElementById('supplierForm');
         if (form) {
+            // Initialize tooltips for form elements
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 await this.saveSupplier();

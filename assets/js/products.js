@@ -249,11 +249,11 @@ class ProductManager {
                         className: 'all text-end',
                         width: '10%',
                         render: (data, type, row) => `
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" class="btn btn-outline-primary edit-btn" data-id="${row.id}">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button type="button" class="btn btn-outline-danger delete-btn" data-id="${row.id}">
+                            <div class="btn-group">
+                                <a href="#add-product/${row.id}" class="btn btn-sm btn-link text-primary" data-bs-toggle="tooltip" data-bs-title="Edit Product">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button class="btn btn-sm btn-link text-danger delete-btn" data-id="${row.id}" data-bs-toggle="tooltip" data-bs-title="Delete Product">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -281,17 +281,44 @@ class ProductManager {
     }
 
     setupListEventListeners() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+
+        // Delete product handler with tooltip management
         $('#productsTable').on('click', '.delete-btn', async (e) => {
-            const id = $(e.target).closest('button').data('id');
+            e.preventDefault();
+            const button = $(e.target).closest('button');
+            const id = button.data('id');
+
+            // Destroy tooltip before showing confirm dialog
+            $(button).tooltip('dispose');
+
             if (confirm('Are you sure you want to delete this product?')) {
                 await this.deleteProduct(id);
+            } else {
+                // Reinitialize tooltip if deletion was cancelled
+                $(button).tooltip();
             }
         });
 
-        // Fix hash format to be 'add-product'
-        $('#productsTable').on('click', '.edit-btn', (e) => {
-            const id = $(e.target).closest('button').data('id');
-            window.location.hash = `add-product/${id}`;
+        // Handle tooltip cleanup on table updates
+        $('#productsTable').on('draw.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+
+        // Destroy tooltips before table updates
+        $('#productsTable').on('preDrawCallback.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        });
+
+        // Cleanup tooltips before any modals
+        $('.modal').on('show.bs.modal', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        });
+
+        // Reinitialize tooltips after modals close
+        $('.modal').on('hidden.bs.modal', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip();
         });
     }
 
@@ -461,6 +488,7 @@ class ProductManager {
                 document.getElementById('productStock').value = data.stock_quantity;
                 document.getElementById('productMinStock').value = data.min_stock;
                 document.getElementById('productType').value = data.type;
+                document.getElementById('productPiecesPerBox').value = data.pieces_per_box || 1;
 
                 // Now set the category
                 $('#productCategory').val(data.category_id).trigger('change');
@@ -487,6 +515,7 @@ class ProductManager {
                 return;
             }
 
+            // Create product data object with all required fields
             const productData = {
                 name: document.getElementById('productName').value.toUpperCase(),
                 category_id: categoryId,
@@ -495,29 +524,23 @@ class ProductManager {
                 description: document.getElementById('productDescription').value?.toUpperCase() || '',
                 unit_price: parseFloat(document.getElementById('productPrice').value) || 0,
                 stock_quantity: parseInt(document.getElementById('productStock').value) || 0,
-                min_stock: parseInt(document.getElementById('productMinStock').value) || 1
+                min_stock: parseInt(document.getElementById('productMinStock').value) || 1,
+                pieces_per_box: parseInt(document.getElementById('productPiecesPerBox').value) || 1
             };
 
-            // Get productId from class property
             if (this.productId) {
                 const { error } = await supabase
                     .from('products')
                     .update(productData)
                     .eq('id', this.productId);
 
-                if (error) {
-                    console.error('Update error:', error);
-                    throw error;
-                }
+                if (error) throw error;
             } else {
                 const { error } = await supabase
                     .from('products')
                     .insert([productData]);
 
-                if (error) {
-                    console.error('Insert error:', error);
-                    throw error;
-                }
+                if (error) throw error;
             }
 
             window.location.hash = 'products-list';

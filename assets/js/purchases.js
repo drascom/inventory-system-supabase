@@ -80,7 +80,84 @@ class PurchaseManager {
             showToast('Error initializing form. Please try again.', 'error');
         }
     }
+    setupListEventListeners() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
 
+        // Delete purchase handler
+        $('#purchasesTable').on('click', '.delete-btn', async (e) => {
+            e.preventDefault();
+            const button = $(e.target).closest('button');
+            const id = button.data('id');
+
+            // Destroy tooltip before showing confirm dialog
+            $(button).tooltip('dispose');
+
+            if (confirm('Are you sure you want to delete this purchase?')) {
+                await this.deletePurchase(id);
+            } else {
+                // Reinitialize tooltip if deletion was cancelled
+                $(button).tooltip();
+            }
+        });
+
+        // Returns table action handlers
+        $('#returnsTable').on('click', '.mark-sent', async (e) => {
+            e.preventDefault();
+            const button = $(e.target).closest('button');
+            const id = button.data('id');
+
+            // Destroy tooltip before action
+            $(button).tooltip('dispose');
+
+            try {
+                button.prop('disabled', true);
+                await this.updateReturnStatus(id, 'SENT');
+            } finally {
+                button.prop('disabled', false);
+                // Reinitialize tooltip after action
+                $(button).tooltip();
+            }
+        });
+
+        $('#returnsTable').on('click', '.mark-confirmed', async (e) => {
+            e.preventDefault();
+            const button = $(e.target).closest('button');
+            const id = button.data('id');
+
+            // Destroy tooltip before action
+            $(button).tooltip('dispose');
+
+            try {
+                button.prop('disabled', true);
+                await this.updateReturnStatus(id, 'CONFIRMED');
+            } finally {
+                button.prop('disabled', false);
+                // Reinitialize tooltip after action
+                $(button).tooltip();
+            }
+        });
+
+        // Handle tooltip cleanup on table updates
+        $('#purchasesTable, #returnsTable').on('draw.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+
+        // Destroy tooltips before table updates
+        $('#purchasesTable, #returnsTable').on('preDrawCallback.dt', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        });
+
+        // Cleanup tooltips before any modals
+        $('.modal').on('show.bs.modal', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        });
+
+        // Reinitialize tooltips after modals close
+        $('.modal').on('hidden.bs.modal', () => {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    }
     async initializePurchasesTable() {
         console.log('Initializing DataTable');
         try {
@@ -92,8 +169,7 @@ class PurchaseManager {
                         company_name
                     ),
                     products (
-                        name,
-                        unit_price
+                        name
                     )
                 `)
                 .order('created_at', { ascending: false });
@@ -107,13 +183,9 @@ class PurchaseManager {
             this.table = $('#purchasesTable').DataTable({
                 data: purchases,
                 columns: [
-                    // { data: 'id', visible: false },
-                    {
-                        data: 'reference_number',
-                        render: (data) => data || 'N/A'
-                    },
                     { data: 'suppliers.company_name' },
                     { data: 'products.name' },
+                    { data: 'reference_number' },
                     {
                         data: 'quantity',
                         className: 'text-end'
@@ -121,12 +193,12 @@ class PurchaseManager {
                     {
                         data: 'unit_price',
                         className: 'text-end',
-                        render: (data) => `$${parseFloat(data).toFixed(2)}`
+                        render: (data) => `£${parseFloat(data).toFixed(2)}`
                     },
                     {
                         data: 'total_amount',
                         className: 'text-end',
-                        render: (data) => `$${parseFloat(data).toFixed(2)}`
+                        render: (data) => `£${parseFloat(data).toFixed(2)}`
                     },
                     {
                         data: 'created_at',
@@ -138,35 +210,37 @@ class PurchaseManager {
                         className: 'text-center',
                         render: (data, type, row) => `
                             <div class="btn-group">
-                                <a href="#edit-purchase/${row.id}" class="btn btn-sm btn-link text-primary">
+                                <a href="#edit-purchase/${row.id}" 
+                                   class="btn btn-sm btn-link text-primary" 
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-title="Edit Purchase">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
-                                <button type="button" class="btn btn-sm btn-link text-danger delete-purchase" data-id="${row.id}">
+                                <button class="btn btn-sm btn-link text-danger delete-btn" 
+                                        data-id="${row.id}" 
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-title="Delete Purchase">
                                     <i class="bi bi-trash"></i>
                                 </button>
+                                <a href="#add-return-purchase/${row.id}" 
+                                   class="btn btn-sm btn-link text-warning"
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-title="Create Return">
+                                    <i class="bi bi-arrow-return-left"></i>
+                                </a>
                             </div>
                         `
                     }
                 ],
-                responsive: true,
-                order: [[7, 'desc']], // Order by created_at descending
-                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                    '<"row"<"col-sm-12"tr>>' +
-                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
-            });
-
-            $('#purchasesTable').on('click', '.delete-purchase', async (e) => {
-                e.preventDefault();
-                const button = $(e.target).closest('.delete-purchase');
-                const id = button.data('id');
-                if (confirm('Are you sure you want to delete this purchase?')) {
-                    await this.deletePurchase(id);
+                drawCallback: function () {
+                    // Reinitialize tooltips after table redraw
+                    $('[data-bs-toggle="tooltip"]').tooltip();
                 }
             });
 
-            console.log('DataTable initialized');
         } catch (error) {
             console.error('Error initializing DataTable:', error);
+            showToast('Error loading purchases data', 'error');
         }
     }
 
@@ -225,7 +299,7 @@ class PurchaseManager {
         try {
             const { data: products, error } = await supabase
                 .from('products')
-                .select('id, name')
+                .select('id, name, unit_price')
                 .order('name');
 
             if (error) throw error;
@@ -235,6 +309,8 @@ class PurchaseManager {
 
             products.forEach(product => {
                 productSelect.append(new Option(product.name, product.id));
+                // Store the unit price directly in the option element
+                productSelect.find(`option[value='${product.id}']`).data('unit_price', product.unit_price);
             });
 
             productSelect.select2({
@@ -242,8 +318,18 @@ class PurchaseManager {
                 placeholder: 'Select Product',
                 width: '100%'
             });
+
+            // Product selection change handler
+            productSelect.on('change', (e) => {
+                const selectedOption = productSelect.find('option:selected');
+                const unitPrice = selectedOption.data('unit_price') || 0;
+                $('#purchaseUnitPrice').val(unitPrice.toFixed(2));
+                this.updateTotalAmount();
+            });
+
         } catch (error) {
             console.error('Error loading products:', error);
+            showToast('Failed to load products', 'error');
         }
     }
 
@@ -427,7 +513,6 @@ class PurchaseManager {
                 e.preventDefault();
                 const button = $(e.target).closest('button');
                 const id = button.data('id');
-                // Store reference to 'this'
                 const self = this;
                 try {
                     button.prop('disabled', true);
@@ -441,7 +526,6 @@ class PurchaseManager {
                 e.preventDefault();
                 const button = $(e.target).closest('button');
                 const id = button.data('id');
-                // Store reference to 'this'
                 const self = this;
                 try {
                     button.prop('disabled', true);
@@ -454,13 +538,17 @@ class PurchaseManager {
             const { data: returns, error } = await supabase
                 .from('purchase_returns')
                 .select(`
-                    *,
-                    purchases!inner (
+                    id,
+                    quantity,
+                    reason,
+                    status,
+                    created_at,
+                    purchase:purchase_id (
                         reference_number,
-                        products!inner (
+                        product:product_id (
                             name
                         ),
-                        suppliers!inner (
+                        supplier:supplier_id (
                             company_name
                         )
                     )
@@ -480,9 +568,18 @@ class PurchaseManager {
                         data: 'created_at',
                         render: (data) => new Date(data).toLocaleString()
                     },
-                    { data: 'purchases.reference_number' },
-                    { data: 'purchases.products.name' },
-                    { data: 'purchases.suppliers.company_name' },
+                    {
+                        data: 'purchase.reference_number',
+                        render: (data) => data || 'N/A'
+                    },
+                    {
+                        data: 'purchase.product.name',
+                        render: (data) => data || 'N/A'
+                    },
+                    {
+                        data: 'purchase.supplier.company_name',
+                        render: (data) => data || 'N/A'
+                    },
                     { data: 'quantity' },
                     { data: 'reason' },
                     {
@@ -500,18 +597,28 @@ class PurchaseManager {
                         data: null,
                         render: (data) => {
                             let actions = `
-                                <a href="#add-return-purchase/${data.id}" class="btn btn-sm btn-link text-primary">
+                                <a href="#add-return-purchase/${data.id}" 
+                                   class="btn btn-sm btn-link text-primary"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-title="Edit Return">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>`;
 
                             if (data.status === 'WAITING') {
                                 actions += `
-                                    <button class="btn btn-sm btn-link text-success mark-sent" data-id="${data.id}">
-                                        <i class="bi bi-check2-circle"></i>
+                                    <button class="btn btn-sm btn-link text-success mark-sent" 
+                                            data-id="${data.id}"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-title="Mark as Sent">
+                                        <i class="bi bi-send"></i>
                                     </button>`;
                             } else if (data.status === 'SENT') {
                                 actions += `
-                                    <button type="button" class="btn btn-sm btn-link text-success mark-confirmed" data-id="${data.id}">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-link text-success mark-confirmed" 
+                                            data-id="${data.id}"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-title="Mark as Confirmed">
                                         <i class="bi bi-check2-all"></i>
                                     </button>`;
                             }
@@ -523,13 +630,14 @@ class PurchaseManager {
                 order: [[0, 'desc']],
                 responsive: true,
                 drawCallback: function () {
-                    // Ensure buttons are properly initialized after each draw
+                    // Reinitialize tooltips after table redraw
                     $('[data-bs-toggle="tooltip"]').tooltip();
                 }
             });
 
         } catch (error) {
             console.error('Error initializing returns table:', error);
+            showToast('Failed to initialize returns table', 'error');
         }
     }
 
@@ -576,11 +684,11 @@ class PurchaseManager {
             // Initialize Select2 for purchase selection
             $('#purchaseSelect').select2({
                 theme: 'bootstrap-5',
-                placeholder: 'Select a purchase',
+                placeholder: 'Search purchase by reference or product...',
                 width: '100%',
                 ajax: {
                     delay: 250,
-                    transport: async function (params, success, failure) {
+                    transport: async (params, success, failure) => {
                         try {
                             const { data: purchases, error } = await supabase
                                 .from('purchases')
@@ -592,14 +700,14 @@ class PurchaseManager {
                                     suppliers (company_name)
                                 `)
                                 .ilike('reference_number', `%${params.data.term || ''}%`)
-                                .limit(10);
+                                .order('created_at', { ascending: false });
 
                             if (error) throw error;
 
-                            const results = purchases.map(purchase => ({
-                                id: purchase.id,
-                                text: `${purchase.reference_number} - ${purchase.products.name} (${purchase.suppliers.company_name})`,
-                                quantity: purchase.quantity
+                            const results = purchases.map(p => ({
+                                id: p.id,
+                                text: `${p.reference_number} - ${p.products.name} (${p.suppliers.company_name})`,
+                                quantity: p.quantity
                             }));
 
                             success({ results });
@@ -631,12 +739,16 @@ class PurchaseManager {
                 await this.processPurchaseReturn();
             });
 
-            // Check for edit mode AFTER initializing Select2
-            await this.checkForReturnEdit();
+            // Check URL for purchase ID
+            const path = window.location.hash.split('/');
+            if (path[0] === '#add-return-purchase' && path.length > 1) {
+                const purchaseId = path[1];
+                await this.loadPurchaseForReturn(purchaseId);
+            }
 
         } catch (error) {
             console.error('Error initializing return form:', error);
-            alert('Error initializing form. Please try again.');
+            showToast('Error initializing form. Please try again.', 'error');
         }
     }
 
@@ -716,64 +828,42 @@ class PurchaseManager {
         }
     }
 
-    async checkForReturnEdit() {
-        const path = window.location.hash.split('/');
-        if (path[0] === '#add-return-purchase' && path.length > 1) {
-            this.returnId = path[1];
-            await this.loadReturnData();
-        }
-    }
-
-    async loadReturnData() {
-        if (!this.returnId) return;
-
+    async loadPurchaseForReturn(purchaseId) {
         try {
-            const { data: returnData, error } = await supabase
-                .from('purchase_returns')
+            const { data: purchase, error } = await supabase
+                .from('purchases')
                 .select(`
-                    *,
-                    purchases!inner (
-                        *,
-                        products!inner (*),
-                        suppliers!inner (*)
-                    )
+                    id,
+                    reference_number,
+                    quantity,
+                    products (name),
+                    suppliers (company_name)
                 `)
-                .eq('id', this.returnId)
+                .eq('id', purchaseId)
                 .single();
 
             if (error) throw error;
 
-            // Set the hidden return ID
-            document.getElementById('returnId').value = this.returnId;
+            // Create the option data
+            const optionData = {
+                id: purchase.id,
+                text: `${purchase.reference_number} - ${purchase.products.name} (${purchase.suppliers.company_name})`,
+                quantity: purchase.quantity
+            };
 
-            // Clear any existing options and add the new one
-            $('#purchaseSelect').empty().append(new Option(
-                `${returnData.purchases.reference_number} - ${returnData.purchases.products.name} (${returnData.purchases.suppliers.company_name})`,
-                returnData.purchase_id,
-                true,
-                true
-            ));
+            // Create the option element
+            const option = new Option(optionData.text, optionData.id, true, true);
 
-            // Manually trigger the change event to update Select2
-            $('#purchaseSelect').trigger('change');
+            // Append it to Select2
+            $('#purchaseSelect').empty().append(option).trigger('change');
 
-            // Set other form values
-            $('#returnQuantity').val(returnData.quantity);
-            $('#returnReason').val(returnData.reason);
-            $('#returnStatus').val(returnData.status);
-            $('#originalQuantity').text(returnData.purchases.quantity);
-            $('#returnQuantity').attr('max', returnData.purchases.quantity);
-
-            // Update form title and breadcrumb if elements exist
-            const formTitle = document.getElementById('formTitle');
-            const breadcrumbAction = document.getElementById('breadcrumbAction');
-
-            if (formTitle) formTitle.textContent = 'Edit Return';
-            if (breadcrumbAction) breadcrumbAction.textContent = 'Edit';
+            // Set the quantity information
+            $('#originalQuantity').text(purchase.quantity);
+            $('#returnQuantity').attr('max', purchase.quantity);
 
         } catch (error) {
-            console.error('Error loading return data:', error);
-            alert('Failed to load return data');
+            console.error('Error loading purchase for return:', error);
+            showToast('Failed to load purchase details', 'error');
         }
     }
 }

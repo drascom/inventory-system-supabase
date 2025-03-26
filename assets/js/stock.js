@@ -22,6 +22,11 @@ class StockManager {
                 throw new Error('Product not found');
             }
 
+            // Ensure we have a created_by value
+            if (!data.created_by && !data.user_id) {
+                throw new Error('No user ID provided for stock movement');
+            }
+
             const movementData = {
                 product_id: data.product_id,
                 movement_type: data.movement_type,
@@ -31,7 +36,7 @@ class StockManager {
                 previous_quantity: currentStock.stock_quantity,
                 new_quantity: currentStock.stock_quantity + data.quantity,
                 notes: data.notes,
-                created_by: data.user_id
+                created_by: data.created_by || data.user_id // Use created_by if available, fall back to user_id
             };
 
             const { error } = await supabase

@@ -303,27 +303,72 @@ cp assets/js/config.example.js assets/js/config.js
 
 ## Features
 
-- **User Authentication**
+- **User Authentication** (v1.0.0)
   - Email/Password login
-  - Magic link authentication
-  - User profile management
+  - Magic link authentication (passwordless)
+  - Basic profile management
   - Avatar upload and management
+  - Session management (v1.2.0)
+    - Session persistence with auto-refresh
+    - Remember me functionality
+    - Enhanced security flows
 
 - **Inventory Management**
-  - Product Management
-    - Streamlined product creation interface
-    - Quick supplier addition functionality
-    - Organized form layout with logical grouping
-    - Real-time stock tracking
-  - Category organization
-  - Multiple product types (Sellable, Consumable, Fixture)
+  - Product Management (v1.0.0)
+    - Basic product CRUD operations
+    - Stock level tracking
+    - Product categorization
+    - Product type classification (Sellable, Consumable, Fixture)
+    - Product images
+    - Enhanced interface (v1.3.0)
+      - Quick Supplier Addition
+      - Improved form layout
+      - Consolidated financial controls
+  - Category Management (v1.0.0)
+    - Basic category CRUD operations
+    - Product-category associations
 
 - **Business Operations**
-  - Sales Management
+  - Sales Management (v1.0.0)
+    - Basic sales entry
+    - Stock reduction on sale
+    - Sales history tracking
   - Purchase Management
-  - Supplier Management
-  - Customer Management
-  - Stock Movement Tracking
+    - Basic purchase entry (v1.0.0)
+    - Stock addition on purchase
+    - Bulk Purchase Management (v1.3.0)
+      - Multi-product purchase entry
+      - Automatic total calculations
+      - Supplier-specific filtering
+    - Returns System (v1.3.0)
+      - Complete returns workflow
+      - Status tracking (SENT, CONFIRMED)
+      - Automated stock adjustments
+  - Supplier Management (v1.0.0)
+    - Supplier CRUD operations
+    - Basic supplier details
+  - Customer Management (v1.0.0)
+    - Customer CRUD operations
+    - Basic customer information
+  - Stock Movement Tracking (v1.2.0)
+    - Automatic stock updates
+    - Movement history logging
+    - Movement types (Purchase, Sale, Return)
+    - Reference type validation
+
+- **UI Features**
+  - Bootstrap 5 responsive design (v1.0.0)
+  - Enhanced UI Components (v1.1.0)
+    - DataTables integration with sorting and filtering
+    - Select2 enhanced dropdowns
+    - Toast notifications
+    - Modal dialogs
+    - Tooltips with auto-cleanup
+
+- **Real-time Features** (v1.1.0)
+  - Live data updates using Supabase subscriptions
+  - Real-time stock level tracking
+  - Instant UI updates on data changes
 
 ## Technologies Used
 
@@ -360,8 +405,23 @@ MIT License - feel free to use this project for learning or business purposes.
 
 ## Version History
 
-### Version 1.3.0 (Current)
-**Released:** 2024-01-20
+### Version 1.4.0 (Current)
+**Released:** 2025-03-26
+- Enhanced UI Responsiveness
+  - Improved tooltip management
+  - Optimized table rendering
+  - Better mobile compatibility
+- Session Management Improvements
+  - Enhanced token refresh mechanism
+  - More reliable session persistence
+  - Improved security checks
+- Stock Movement Enhancements
+  - Refined movement validation
+  - Better error handling
+  - Improved movement history display
+
+### Version 1.3.0
+**Released:** 2025-03-20
 - Enhanced Product Management Interface
   - Quick Supplier Addition feature
   - Improved form layout and organization
@@ -377,7 +437,7 @@ MIT License - feel free to use this project for learning or business purposes.
   - Automated stock adjustments
 
 ### Version 1.2.0
-**Released:** 2023-12-15
+**Released:** 2025-03-15
 - Stock Movement Tracking
   - Automated stock updates
   - Movement history
@@ -388,7 +448,7 @@ MIT License - feel free to use this project for learning or business purposes.
   - Updated database access controls
 
 ### Version 1.1.0
-**Released:** 2023-11-01
+**Released:** 2025-03-10
 - User Interface Improvements
   - Responsive design implementation
   - DataTables integration
@@ -399,7 +459,7 @@ MIT License - feel free to use this project for learning or business purposes.
   - Stock movement automation
 
 ### Version 1.0.0
-**Released:** 2023-10-01
+**Released:** 2025-03-01
 - Initial Release
   - Basic inventory management
   - User authentication

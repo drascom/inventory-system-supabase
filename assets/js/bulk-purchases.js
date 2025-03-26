@@ -134,12 +134,15 @@ class BulkPurchaseManager {
         try {
             const { data: products, error } = await supabase
                 .from('products')
-                .select('id, name, min_stock')
+                .select('id, name, unit_price')  // Added unit_price
                 .order('name');
 
             if (error) throw error;
 
-            this.products = products; // Store products for later use
+            this.products = products.map(product => ({
+                ...product,
+                unit_price: parseFloat(product.unit_price) || 0
+            }));
         } catch (error) {
             console.error('Error loading products:', error);
             showToast('Failed to load products', 'error');
@@ -149,20 +152,32 @@ class BulkPurchaseManager {
     setupEventListeners() {
         $('#addProductRow').on('click', () => this.addProductRow());
 
-        // Add supplier change event listener
+        // Update supplier change event listener
         $('#purchaseSupplier').on('change', async (e) => {
             const supplierId = e.target.value;
             if (supplierId) {
                 try {
+                    console.log('Selected supplier ID:', supplierId);
+
                     const { data: products, error } = await supabase
                         .from('products')
-                        .select('id, name, min_stock')
+                        .select('id, name, min_stock, unit_price')
                         .eq('supplier_id', supplierId)
                         .order('name');
 
                     if (error) throw error;
 
-                    this.products = products;
+                    console.log('Fetched products:', products);
+
+                    // Store products in the class property
+                    this.products = products.map(product => ({
+                        ...product,
+                        unit_price: parseFloat(product.unit_price) || 0
+                    }));
+
+                    console.log('Processed products:', this.products);
+
+                    // Clear existing rows and add a new one
                     $('#productsTableBody').empty();
                     this.addProductRow();
                 } catch (error) {
@@ -190,16 +205,37 @@ class BulkPurchaseManager {
         const $row = $(this.productRowTemplate);
         const $select = $row.find('.product-select');
 
+        console.log('Adding product row, available products:', this.products);
+
+        // Clear existing options first
+        $select.empty();
+
+        // Add empty option
+        $select.append(new Option('Select Product', ''));
+
         // Populate products
-        this.products.forEach(product => {
-            $select.append(new Option(product.name, product.id));
-        });
+        if (this.products && this.products.length > 0) {
+            this.products.forEach(product => {
+                console.log('Adding product to select:', product);
+                const option = new Option(product.name, product.id);
+                $(option).data('unit_price', product.unit_price);
+                $select.append(option);
+            });
+        }
 
         // Initialize Select2
         $select.select2({
             theme: 'bootstrap-5',
             placeholder: 'Select Product',
             width: '100%'
+        });
+
+        // Add change event handler for product selection
+        $select.on('change', (e) => {
+            const selectedOption = $select.find('option:selected');
+            const unitPrice = $(selectedOption).data('unit_price') || 0;
+            $row.find('.price-input').val(unitPrice.toFixed(2));
+            this.updateTotals();
         });
 
         $('#productsTableBody').append($row);

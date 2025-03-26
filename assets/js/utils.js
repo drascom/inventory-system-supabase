@@ -72,3 +72,46 @@ export function showToast(message, type = 'info', duration = 3000) {
         toastEl.remove();
     });
 }
+
+/**
+ * Enhanced tooltip cleanup utility
+ */
+export function cleanupTooltips() {
+    // Clean up Bootstrap 5 tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(element => {
+        try {
+            const tooltip = bootstrap.Tooltip.getInstance(element);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+        } catch (e) {
+            console.warn('Error disposing tooltip:', e);
+        }
+    });
+
+    // Clean up jQuery tooltips
+    try {
+        $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+    } catch (e) {
+        console.warn('Error disposing jQuery tooltips:', e);
+    }
+
+    // Force remove any remaining tooltip elements
+    const orphanedTooltips = document.querySelectorAll('.tooltip, .bs-tooltip-auto, .bs-tooltip-top, .bs-tooltip-bottom, .bs-tooltip-start, .bs-tooltip-end');
+    orphanedTooltips.forEach(tooltip => tooltip.remove());
+}
+
+/**
+ * Global tooltip initialization with automatic cleanup
+ */
+export function initializeTooltips(container = document) {
+    cleanupTooltips();
+    const tooltipTriggerList = container.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(element => {
+        new bootstrap.Tooltip(element, {
+            trigger: 'hover',
+            container: 'body'
+        });
+    });
+}
