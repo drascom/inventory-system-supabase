@@ -1,0 +1,26 @@
+
+[2025-03-27 15:47:48] Starting update process to version 
+[2025-03-27 15:47:48] Starting download from: https://api.github.com/repos/drascom/inventory-system-supabase/zipball/v1.4.1
+[2025-03-27 15:47:48] Starting download from URL: https://api.github.com/repos/drascom/inventory-system-supabase/zipball/v1.4.1
+[2025-03-27 15:47:50] HTTP Response Code: 200
+[2025-03-27 15:47:50] Download successful. File size: 6587973 bytes
+[2025-03-27 15:47:50] Download completed successfully
+[2025-03-27 15:47:50] ZIP file validation successful
+[2025-03-27 15:47:51] Backup created: backups/backup-2025-03-27-15-47-50.zip
+[2025-03-27 15:47:51] Update package extracted successfully
+[2025-03-27 15:47:51] Update applied successfully
+[2025-03-27 15:47:51] Version file backed up to: backups/version-2025-03-27-15-47-51.json
+[2025-03-27 15:47:51] Version file updated to version: 
+[2025-03-27 15:47:51] Cleanup completed
+[2025-03-27 16:37:05] Starting update process to version 1.4.1
+[2025-03-27 16:37:05] Starting download from URL: https://api.github.com/repos/drascom/inventory-system-supabase/zipball/v1.4.1
+[2025-03-27 16:37:08] HTTP Response Code: 200
+[2025-03-27 16:37:08] Download successful. File size: 6587973 bytes
+[2025-03-27 16:37:08] Backup created: backups/backup-2025-03-27-16-37-08.zip
+[2025-03-27 16:37:08] Version updated to: 1.4.1
+[2025-03-27 16:50:00] Starting download from URL: https://api.github.com/repos/drascom/inventory-system-supabase/zipball/v1.4.1
+[2025-03-27 16:50:02] HTTP Response Code: 200
+[2025-03-27 16:50:02] Download successful. File size: 6587973 bytes
+[2025-03-27 16:55:35] Starting download from URL: https://api.github.com/repos/drascom/inventory-system-supabase/zipball/v1.4.1
+[2025-03-27 16:59:37] Starting download from URL: https://api.github.com/repos/drascom/inventory-system-supabase/zipball/v1.4.1
+[2025-03-27 17:00:02] Starting download from URL: https://api.github.com/repos/drascom/inventory-system-supabase/zipball/v1.4.1

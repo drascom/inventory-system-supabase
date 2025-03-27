@@ -8,4 +8,6 @@ Thumbs.db
 # IDE files
 .vscode/
 .idea/
+temp
+backups/*
 Archive.zip
