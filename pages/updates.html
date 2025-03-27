@@ -1,0 +1,133 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">System Updates</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Current Version</h6>
+                                    <h4 id="currentVersion">Loading...</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Latest Version</h6>
+                                    <h4 id="latestVersion">Checking...</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="updateAvailable" style="display: none;">
+                        <div class="alert alert-info">
+                            <h5>Update Available!</h5>
+                            <p>A new version is available. Would you like to update now?</p>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6>Release Notes</h6>
+                            </div>
+                            <div class="card-body">
+                                <pre id="releaseNotes" class="bg-light p-3 rounded"></pre>
+                            </div>
+                        </div>
+
+                        <button id="updateButton" class="btn btn-primary">
+                            Update Now
+                        </button>
+                    </div>
+
+                    <div id="noUpdate" style="display: none;">
+                        <div class="alert alert-success">
+                            <h5>System Up to Date</h5>
+                            <p>You are running the latest version.</p>
+                        </div>
+                    </div>
+
+                    <div id="updateProgress" style="display: none;">
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                style="width: 0%" id="updateProgressBar">
+                            </div>
+                        </div>
+                        <div id="updateStatus" class="text-muted"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import UpdateManager from '../assets/js/update-manager.js';
+    import { showToast } from '../assets/js/utils.js';
+
+    async function checkForUpdates() {
+        try {
+            const updateInfo = await UpdateManager.checkForUpdates();
+
+            document.getElementById('currentVersion').textContent = updateInfo.currentVersion;
+            document.getElementById('latestVersion').textContent = updateInfo.latestVersion;
+
+            if (!updateInfo.downloadUrl) {
+                // No releases available
+                document.getElementById('updateAvailable').style.display = 'none';
+                document.getElementById('noUpdate').style.display = 'block';
+                document.getElementById('noUpdate').querySelector('p').textContent =
+                    'No releases available on GitHub. System is up to date.';
+                return;
+            }
+
+            if (updateInfo.updateAvailable) {
+                document.getElementById('updateAvailable').style.display = 'block';
+                document.getElementById('noUpdate').style.display = 'none';
+                document.getElementById('releaseNotes').textContent = updateInfo.releaseNotes;
+            } else {
+                document.getElementById('updateAvailable').style.display = 'none';
+                document.getElementById('noUpdate').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error checking for updates:', error);
+            showToast('Failed to check for updates: ' + error.message, 'error');
+
+            // Show error state in the UI
+            document.getElementById('currentVersion').textContent = UpdateManager.currentVersion;
+            document.getElementById('latestVersion').textContent = 'Check failed';
+            document.getElementById('updateAvailable').style.display = 'none';
+            document.getElementById('noUpdate').style.display = 'block';
+            document.getElementById('noUpdate').querySelector('p').textContent =
+                'Failed to check for updates. Please try again later.';
+        }
+    }
+
+    document.getElementById('updateButton').addEventListener('click', async () => {
+        try {
+            const updateInfo = await UpdateManager.checkForUpdates();
+
+            document.getElementById('updateProgress').style.display = 'block';
+            document.getElementById('updateButton').disabled = true;
+
+            const updateBlob = await UpdateManager.downloadUpdate(updateInfo.downloadUrl);
+            await UpdateManager.applyUpdate(updateBlob);
+
+        } catch (error) {
+            console.error('Update failed:', error);
+            showToast('Update failed: ' + error.message, 'error');
+            document.getElementById('updateButton').disabled = false;
+        }
+    });
+
+    // Check for updates when page loads
+    checkForUpdates();
+
+    // Check for updates every hour
+    setInterval(checkForUpdates, 3600000);
+</script>

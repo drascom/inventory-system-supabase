@@ -243,3 +243,34 @@ SELECT conname, conrelid::regclass AS table_name,
 FROM pg_constraint 
 WHERE contype = 'f' 
   AND conrelid = 'purchases'::regclass;
+
+-- Create system_backups table
+CREATE TABLE system_backups (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    version VARCHAR(20) NOT NULL,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    backup_ref TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    restored_at TIMESTAMP WITH TIME ZONE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index on timestamp
+CREATE INDEX idx_system_backups_timestamp ON system_backups(timestamp);
+
+-- Create function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger for updated_at
+CREATE TRIGGER update_system_backups_updated_at
+    BEFORE UPDATE ON system_backups
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
