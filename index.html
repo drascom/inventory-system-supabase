@@ -30,28 +30,28 @@
             try {
                 const { data: { user }, error } = await supabase.auth.getUser();
 
-                if (error) {
-                    throw error;
-                }
-
                 // Hide loading spinner
                 document.getElementById('loading').style.display = 'none';
 
-                // Redirect based on auth status
                 if (user) {
-                    window.location.href = 'dashboard.html';
+                    window.location.replace('dashboard.html');
                 } else {
-                    window.location.href = 'login.html';
+                    window.location.replace('login.html');
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
-                // On error, redirect to login
-                window.location.href = 'login.html';
+                window.location.replace('login.html');
             }
         }
 
-        // Check auth status when page loads
-        document.addEventListener('DOMContentLoaded', checkAuthAndRedirect);
+        // Only check once when page loads
+        let authCheckDone = false;
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authCheckDone) {
+                authCheckDone = true;
+                checkAuthAndRedirect();
+            }
+        });
     </script>
 </body>
 

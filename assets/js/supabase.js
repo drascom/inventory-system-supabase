@@ -34,62 +34,24 @@ async function signIn(email, password) {
 
         if (error) throw error;
 
-        // Check if profile exists, if not create one
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-        let userProfile;
-        if (profileError && profileError.code === 'PGRST116') {
-            // Get public URL for default avatar
-            const { data: { publicUrl: defaultAvatarUrl } } = supabase.storage
-                .from('inventory-avatar')
-                .getPublicUrl('default/avatar.png');
-
-            // Create profile with default values
-            const { data: newProfile, error: createError } = await supabase
-                .from('profiles')
-                .insert({
-                    id: user.id,
-                    username: null,
-                    avatar_url: defaultAvatarUrl,
-                    created_at: new Date(),
-                    updated_at: new Date()
-                })
-                .select()
-                .single();
-
-            if (createError) {
-                console.error('Error creating profile:', createError);
-            } else {
-                userProfile = newProfile;
-            }
-        } else {
-            userProfile = profile;
-        }
-
-        // Store session data with user profile
+        // Store session data
         const sessionData = {
             access_token: session.access_token,
             refresh_token: session.refresh_token,
             user: {
                 id: user.id,
                 email: user.email,
-                created_at: user.created_at,
-                profile: userProfile // Store the full profile data
+                created_at: user.created_at
             },
             expires_at: rememberMe
-                ? new Date().getTime() + (365 * 24 * 60 * 60 * 1000) // 1 year
-                : new Date().getTime() + (12 * 60 * 60 * 1000) // 12 hours
+                ? new Date().getTime() + (365 * 24 * 60 * 60 * 1000)
+                : new Date().getTime() + (12 * 60 * 60 * 1000)
         };
 
-        // Store session and remember preference
         localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         localStorage.setItem(REMEMBER_KEY, rememberMe);
 
-        window.location.href = 'dashboard.html';
+        window.location.replace('dashboard.html');
         return user;
     } catch (error) {
         showToast(error.message, 'error');
@@ -155,33 +117,11 @@ async function checkAuth() {
         // First check if there's a magic link token
         if (window.location.hash.includes('access_token')) {
             await handleMagicLinkAuth();
-            return;
+            return true;
         }
 
-        // Check local storage session
-        const sessionData = JSON.parse(localStorage.getItem(SESSION_KEY));
-        const currentTime = new Date().getTime();
-
-        if (!sessionData) {
-            return null;
-        }
-
-        // Check if session has expired
-        if (currentTime > sessionData.expires_at) {
-            // Session expired, clear storage
-            localStorage.removeItem(SESSION_KEY);
-            localStorage.removeItem(REMEMBER_KEY);
-            return null;
-        }
-
-        // Verify session with Supabase
-        const { data: { user }, error } = await supabase.auth.getUser(sessionData.access_token);
-
-        if (error || !user) {
-            localStorage.removeItem(SESSION_KEY);
-            localStorage.removeItem(REMEMBER_KEY);
-            return null;
-        }
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
 
         return user;
     } catch (error) {
@@ -253,10 +193,14 @@ setInterval(async () => {
     }
 }, 60000); // Check every minute
 
-// Initialize auth check only on specific pages
+// Remove the automatic page check
 const currentPage = window.location.pathname.split('/').pop();
-if (currentPage === 'login.html' || currentPage === 'dashboard.html') {
-    checkAuth();
+if (currentPage === 'dashboard.html') {
+    checkAuth().then(user => {
+        if (!user) {
+            window.location.replace('login.html');
+        }
+    });
 }
 
 // Add a helper function to get user data
