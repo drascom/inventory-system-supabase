@@ -1,13 +1,24 @@
 # Release Notes
 
-## Version 1.4.0 (Initial Release)
-**Release Date:** 2025-03-26
-
+## v1.4.2 (2025-03-27)
 ### New Features
-- **Enhanced UI Responsiveness**
-  - Improved tooltip management and cleanup
-  - Optimized table rendering performance
-  - Better mobile device compatibility
+- Auto-Update System
+  - Automatic updates from GitHub releases
+  - Backup creation before updates
+  - Version management
+  - Progress tracking
+  - Rollback capability
+### Bug Fixes
+  - Enhanced error handling
+  - Improved update reliability
+  - Better version compatibility checks
+
+## v1.4.0 (2025-03-26)
+### New Features
+- Enhanced UI Responsiveness
+  - Improved tooltip management
+  - Optimized table rendering
+  - Better mobile compatibility
   - Responsive design improvements across all pages
 
 - **Session Management**

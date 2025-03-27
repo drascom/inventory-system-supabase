@@ -41,4 +41,8 @@ jobs:
           draft: false
           prerelease: false
         env:
+<<<<<<< HEAD
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+=======
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+>>>>>>> d7b5be4 (Bump version to v1.4.3)
