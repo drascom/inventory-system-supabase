@@ -394,6 +394,34 @@
         let currentLoadRequest = null;
         let contentLoadedFlags = {};
 
+        // Move the event listeners inside this module script
+        document.addEventListener('DOMContentLoaded', () => {
+            // Clean tooltips on any navigation
+            window.addEventListener('hashchange', () => {
+                cleanupTooltips();
+            });
+
+            // Clean tooltips before unload
+            window.addEventListener('beforeunload', () => {
+                cleanupTooltips();
+            });
+
+            // Handle modal events globally
+            document.addEventListener('show.bs.modal', () => {
+                cleanupTooltips();
+            });
+
+            document.addEventListener('hidden.bs.modal', () => {
+                cleanupTooltips();
+            });
+        });
+
+        // Make loadContent available globally
+        window.loadContent = async function (page, retryCount = 0) {
+            cleanupTooltips(); // Clean before loading new content
+            // ... rest of your loadContent function
+        };
+
         const pageMap = {
             'dashboard': 'pages/dashboard-content.html',
             'products-list': 'pages/products-list.html',

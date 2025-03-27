@@ -119,8 +119,47 @@
 <script type="module">
     import { supabase } from '../assets/js/supabase.js';
 
+    async function checkDailyUpdate() {
+        // Get last check timestamp from localStorage
+        const lastCheck = localStorage.getItem('lastUpdateCheck');
+        const currentTime = new Date().getTime();
+
+        // Check if we should perform update check (once per day)
+        if (!lastCheck || (currentTime - parseInt(lastCheck)) > 24 * 60 * 60 * 1000) {
+            try {
+                const response = await fetch('/update-handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'check' })
+                });
+
+                const result = await response.json();
+
+                // Store current check time
+                localStorage.setItem('lastUpdateCheck', currentTime.toString());
+
+                if (result.success && result.updateAvailable) {
+                    // Redirect to updates page
+                    window.location.hash = 'updates';
+                    return true;
+                }
+            } catch (error) {
+                console.error('Update check failed:', error);
+            }
+        }
+        return false;
+    }
+
     async function loadDashboardData() {
         try {
+            // Check for updates first
+            const updateAvailable = await checkDailyUpdate();
+            if (updateAvailable) {
+                return; // Stop dashboard load if update is available
+            }
+
             // Fetch last 30 days sales total
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
