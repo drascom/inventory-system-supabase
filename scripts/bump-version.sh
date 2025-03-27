@@ -41,14 +41,14 @@ fi
 # Calculate new version
 NEW_VERSION=$(increment_version "$CURRENT_VERSION" "$1")
 
-# Update version.json
-sed -i "s/\"version\": *\"[^\"]*\"/\"version\": \"$NEW_VERSION\"/" config/version.json
+# Update version.json (macOS compatible)
+sed -i '' "s/\"version\": *\"[^\"]*\"/\"version\": \"$NEW_VERSION\"/" config/version.json
 
 # Get current date
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 
-# Update updated_at in version.json
-sed -i "s/\"updated_at\": *\"[^\"]*\"/\"updated_at\": \"$CURRENT_DATE\"/" config/version.json
+# Update updated_at in version.json (macOS compatible)
+sed -i '' "s/\"updated_at\": *\"[^\"]*\"/\"updated_at\": \"$CURRENT_DATE\"/" config/version.json
 
 # Commit changes
 git add config/version.json
@@ -56,8 +56,8 @@ git add config/version.json
 git commit -m "Bump version to $NEW_VERSION"
 
 # Create and push tag
-git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
-git push main main "$NEW_VERSION"
+git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION" --force
+git push inventory main --tags --force
 
 echo "Version bumped to $NEW_VERSION and tag pushed to GitHub"
 
