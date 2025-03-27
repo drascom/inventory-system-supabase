@@ -8,6 +8,10 @@ Thumbs.db
 # IDE files
 .vscode/
 .idea/
-temp
-backups/*
+
+# Build and temp directories
+temp/
+backups/
+node_modules/
+*.log
 Archive.zip
