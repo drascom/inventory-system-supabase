@@ -79,7 +79,7 @@ class UpdateHandler
             // Extract and apply update
             if (!$this->extractAndApplyUpdate($downloadPath)) {
                 // Restore from backup if update fails
-                $this->restoreFromBackup($backupFile);
+                $this->extractZip($backupFile, '.');
                 throw new Exception('Failed to apply update');
             }
 
@@ -90,7 +90,8 @@ class UpdateHandler
             ]);
 
             // Cleanup
-            $this->cleanup($downloadPath);
+            $extractPath = $this->tempDir;
+            $this->cleanup($downloadPath, $extractPath);
 
             return [
                 'success' => true,
@@ -99,7 +100,7 @@ class UpdateHandler
             ];
 
         } catch (Exception $e) {
-            $this->logError($e->getMessage());
+            $this->logMessage($e->getMessage());
             return [
                 'success' => false,
                 'message' => $e->getMessage(),

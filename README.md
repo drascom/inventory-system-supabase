@@ -2,18 +2,6 @@
 
 A modern web-based inventory management system built with Supabase as the backend. This project demonstrates how to create a full-featured inventory system using Supabase's powerful features including authentication, real-time database, and storage capabilities.
 
-## Recent Updates
-
-### Enhanced Product Management Interface
-- **Quick Supplier Addition**: Added ability to create new suppliers directly from the product form
-  - Quick add button next to supplier selection
-  - Modal dialog for rapid supplier creation
-  - Automatic supplier list refresh and selection
-- **Improved Form Layout**:
-  - Reorganized product form for better usability
-  - Category and Type selections grouped in one row
-  - Financial and stock controls (Price, Stock Count, Min Stock) consolidated in one row
-  - Responsive design maintained across all screen sizes
 
 ## Developed With
 
@@ -50,207 +38,16 @@ Execute the following SQL in your Supabase SQL editor (`db/schema.sql`):
    - File size limit: 5MB
    - Allowed mime types: image/*
 
-### 3. Storage Policies
-For the `inventory-avatar` bucket, add these policies:
+### 3. Database and Storage Policies
+Execute the policies found in `db/policies.md` to set up:
+- Storage bucket policies for `inventory-avatar`
+- Table-level RLS (Row Level Security) policies for all database tables
 
-```sql
-CREATE POLICY "Allow authenticated users to select from inventory-avatar bucket" 
-ON storage.objects 
-FOR SELECT 
-TO authenticated 
-USING (bucket_id = 'inventory-avatar');
-
-CREATE POLICY "Allow authenticated users to insert into inventory-avatar bucket" 
-ON storage.objects 
-FOR INSERT 
-TO authenticated 
-WITH CHECK (bucket_id = 'inventory-avatar');
-
-CREATE POLICY "Allow authenticated users to update inventory-avatar bucket" 
-ON storage.objects 
-FOR UPDATE 
-TO authenticated 
-USING (bucket_id = 'inventory-avatar') 
-WITH CHECK (bucket_id = 'inventory-avatar');
-
-CREATE POLICY "Allow authenticated users to delete from inventory-avatar bucket" 
-ON storage.objects 
-FOR DELETE 
-TO authenticated 
-USING (bucket_id = 'inventory-avatar');
-```
-
-### 4. Database Policies
-
-```sql
-CREATE POLICY "Allow authenticated users to select" ON public.categories
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.categories
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.categories
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.categories
-FOR DELETE
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to select" ON public.customers
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.customers
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.customers
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.customers
-FOR DELETE
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to select" ON public.products
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.products
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.products
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.products
-FOR DELETE
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to select" ON public.purchase_returns
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.purchase_returns
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.purchase_returns
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.purchase_returns
-FOR DELETE
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to select" ON public.purchases
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.purchases
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.purchases
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.purchases
-FOR DELETE
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to select" ON public.sales
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.sales
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.sales
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.sales
-FOR DELETE
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to select" ON public.stock_movements
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.stock_movements
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.stock_movements
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.stock_movements
-FOR DELETE
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to select" ON public.suppliers
-FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Allow authenticated users to insert" ON public.suppliers
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update" ON public.suppliers
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to delete" ON public.suppliers
-FOR DELETE
-TO authenticated
-USING (true);
-```
+### 4. Authentication Setup
+1. Navigate to your Supabase project dashboard
+2. Go to Authentication > Settings
+3. Enable "Email" and "Password" sign-in methods
+4. Set up email templates if needed
 
 ## Authentication Setup
 
@@ -299,7 +96,18 @@ git clone https://github.com/drascom/inventory-system-supabase.git
 cp assets/js/config.example.js assets/js/config.js
 ```
 
-3. Open `index.html` in your web browser or use a local server (like Live Server in VS Code)
+3. Set up database policies by executing the SQL statements from `db/policies.md` in your Supabase SQL editor:
+   - Storage bucket policies for avatar uploads
+   - Table-level RLS (Row Level Security) policies
+   - Authentication policies
+
+4. Server Setup:
+   - All pages and functions except for the update functionality: Open `index.html` in your web browser or use a local server (like Live Server in VS Code)
+   - For update functionality: Use a PHP server (e.g., Apache, XAMPP, or PHP's built-in server) as the auto-update feature requires PHP:
+     ```bash
+     php -S localhost:8000
+     ```
+   Note: The auto-update feature will not work when opening HTML files directly in the browser or using non-PHP servers.
 
 ## Features
 
@@ -405,7 +213,20 @@ MIT License - feel free to use this project for learning or business purposes.
 
 ## Version History
 
-### Version 1.4.0 (Current)
+### Version 1.4.2 (Latest)
+**Released:** 2025-03-27
+- Auto-Update System
+  - Automatic updates from GitHub releases
+  - Backup creation before updates
+  - Version management
+  - Progress tracking
+  - Rollback capability
+- Bug Fixes
+  - Enhanced error handling
+  - Improved update reliability
+  - Better version compatibility checks
+
+### Version 1.4.0
 **Released:** 2025-03-26
 - Enhanced UI Responsiveness
   - Improved tooltip management
