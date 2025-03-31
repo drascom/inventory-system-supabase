@@ -1,5 +1,13 @@
 # Release Notes
 
+## v1.4.3 (2024-01-09)
+### New Features
+- **Enhanced Purchase Management**
+  - Product selection now depends on supplier selection
+    - Products are filtered based on the selected supplier
+    - Improved data integrity by preventing invalid supplier-product combinations
+    - Real-time product list updates when supplier changes
+
 ## v1.4.2 (2025-03-27)
 ### New Features
 - Auto-Update System
