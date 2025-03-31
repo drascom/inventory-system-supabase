@@ -214,7 +214,7 @@ MIT License - feel free to use this project for learning or business purposes.
 ## Version History
 
 ### Version 1.4.3 (Latest)
-**Released:** 2025-03-28
+**Released:** 2024-01-09
 - Enhanced Purchase Management
   - Product selection now depends on supplier selection
   - Improved UX with "Select Supplier First" placeholder
