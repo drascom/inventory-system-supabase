@@ -183,9 +183,9 @@ class PurchaseManager {
             this.table = $('#purchasesTable').DataTable({
                 data: purchases,
                 columns: [
+                    { data: 'reference_number' },
                     { data: 'suppliers.company_name' },
                     { data: 'products.name' },
-                    { data: 'reference_number' },
                     {
                         data: 'quantity',
                         className: 'text-end'
@@ -199,10 +199,6 @@ class PurchaseManager {
                         data: 'total_amount',
                         className: 'text-end',
                         render: (data) => `£${parseFloat(data).toFixed(2)}`
-                    },
-                    {
-                        data: 'created_at',
-                        render: (data) => new Date(data).toLocaleDateString()
                     },
                     {
                         data: null,

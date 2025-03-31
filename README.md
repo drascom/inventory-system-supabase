@@ -213,7 +213,19 @@ MIT License - feel free to use this project for learning or business purposes.
 
 ## Version History
 
-### Version 1.4.2 (Latest)
+### Version 1.4.3 (Latest)
+**Released:** 2025-03-28
+- Enhanced Purchase Management
+  - Product selection now depends on supplier selection
+  - Improved UX with "Select Supplier First" placeholder
+  - Disabled product selection until supplier is chosen
+  - Real-time product list updates based on supplier change
+- Bug Fixes
+  - Fixed product dropdown state management
+  - Improved form validation flow
+  - Better error handling for supplier-product relationships
+
+### Version 1.4.2
 **Released:** 2025-03-27
 - Auto-Update System
   - Automatic updates from GitHub releases

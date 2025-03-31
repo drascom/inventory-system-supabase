@@ -390,11 +390,13 @@
         import { getCurrentUser, getCurrentUserProfile } from './assets/js/supabase.js';
         import { cleanupTooltips } from './assets/js/utils.js';
 
+        // Make it globally available
+        window.cleanupTooltips = cleanupTooltips;
+
         let isLoading = false;
         let currentLoadRequest = null;
         let contentLoadedFlags = {};
 
-        // Move the event listeners inside this module script
         document.addEventListener('DOMContentLoaded', () => {
             // Clean tooltips on any navigation
             window.addEventListener('hashchange', () => {

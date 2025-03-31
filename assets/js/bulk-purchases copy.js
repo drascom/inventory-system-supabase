@@ -38,16 +38,13 @@ class BulkPurchaseManager {
     }
 
     initializeSelect2ForProductSelect($select) {
-        const supplierId = $('#purchaseSupplier').val();
-        const placeholder = !supplierId ? 'Select Supplier First' : 'Select Product';
-
         $select.select2({
             theme: 'bootstrap-5',
-            placeholder: placeholder,
+            placeholder: $select.prop('disabled') ? 'Select Supplier First' : 'Select Product',
             width: '100%',
             templateResult: function (data) {
                 if (data.id === 'quick-add') {
-                    return $('<span><i class="bi bi-plus-circle me-1"></i><strong>Add Product</strong></span>');
+                    return $('<span><i class="bi bi-plus-circle me-1"></i><strong>Quick Add Product</strong></span>');
                 }
                 return data.text;
             },
@@ -338,11 +335,15 @@ class BulkPurchaseManager {
 
                     if (error) throw error;
 
+                    console.log('Fetched products:', products);
+
                     // Store products in the class property
                     this.products = products.map(product => ({
                         ...product,
                         unit_price: parseFloat(product.unit_price) || 0
                     }));
+
+                    console.log('Processed products:', this.products);
 
                     // Clear existing rows and add a new one
                     $('#productsTableBody').empty();
@@ -354,7 +355,6 @@ class BulkPurchaseManager {
             } else {
                 this.products = [];
                 $('#productsTableBody').empty();
-                this.addProductRow(); // This will now show "Select Supplier First"
             }
         });
 
@@ -372,32 +372,24 @@ class BulkPurchaseManager {
     addProductRow() {
         const $row = $(this.productRowTemplate);
         const $select = $row.find('.product-select');
-        const supplierId = $('#purchaseSupplier').val();
 
         // Clear existing options first
         $select.empty();
 
-        if (!supplierId) {
-            // If no supplier selected, show placeholder and disable
-            $select.append(new Option('Select Supplier First', ''));
-            $select.prop('disabled', true);
-        } else {
-            // Enable select and add default option
-            $select.prop('disabled', false);
-            $select.append(new Option('Select Product', ''));
+        // Add empty option
+        $select.append(new Option('Select Product', ''));
 
-            // Populate products
-            if (this.products && this.products.length > 0) {
-                this.products.forEach(product => {
-                    const option = new Option(product.name, product.id);
-                    $(option).data('unit_price', product.unit_price);
-                    $select.append(option);
-                });
-            }
-
-            // Add Quick Add option
-            $select.prepend(new Option('+ Add Product', 'quick-add'));
+        // Populate products
+        if (this.products && this.products.length > 0) {
+            this.products.forEach(product => {
+                const option = new Option(product.name, product.id);
+                $(option).data('unit_price', product.unit_price);
+                $select.append(option);
+            });
         }
+
+        // Add Quick Add option
+        $select.prepend(new Option('+ Add Product', 'quick-add'));
 
         // Initialize Select2 with our custom configuration
         this.initializeSelect2ForProductSelect($select);
